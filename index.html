@@ -377,24 +377,25 @@
             return {
                 iframe: id ? `https://drive.google.com/file/d/${id}/preview` : url,
                 image: id ? `https://drive.google.com/thumbnail?authuser=0&sz=w1000&id=${id}` : url,
-                direct: id ? `https://drive.google.com/uc?export=download&id=${id}` : url, 
+                // 🌟 confirm=t 옵션을 추가하여 바이러스 검사 경고창을 건너뛰고 바로 소스를 불러옴
+                direct: id ? `https://drive.google.com/uc?export=download&id=${id}&confirm=t` : url, 
                 id: id
             };
         }
 
-        // 🌟 실시간 오디오(비디오 백그라운드) 재생 제어 로직 보강
+        // 🌟 실시간 오디오(비디오 백그라운드) 재생 제어 로직
         function toggleAudio(btn, audioId) {
             const media = document.getElementById(audioId);
-            const progressBar = btn.parentElement.querySelector('.audio-progress-bar');
-            const timeLabel = btn.parentElement.querySelector('.audio-time-label');
+            const container = btn.closest('.audio-player-bubble');
+            const progressBar = container.querySelector('.audio-progress-bar');
+            const timeLabel = container.querySelector('.audio-time-label');
             const icon = btn.querySelector('svg path');
 
             if (media.paused) {
-                // 다른 모든 재생 정지
                 document.querySelectorAll('audio, video').forEach(m => {
                     if (m.id !== audioId && !m.closest('#videoPopup')) {
                         m.pause();
-                        const otherIcon = m.parentElement?.querySelector('.play-toggle-btn svg path');
+                        const otherIcon = m.closest('.audio-player-bubble')?.querySelector('.play-toggle-btn svg path');
                         if (otherIcon) otherIcon.setAttribute('d', 'M8 5v14l11-7z');
                     }
                 });
@@ -423,16 +424,22 @@
             media.onended = () => {
                 icon.setAttribute('d', 'M8 5v14l11-7z');
                 progressBar.style.width = '0%';
-                timeLabel.innerText = '0:00';
+                const dur = Math.floor(media.duration || 0);
+                const min = Math.floor(dur / 60);
+                const sec = dur % 60;
+                timeLabel.innerText = `${min}:${sec.toString().padStart(2, '0')}`;
             };
-            
-            // 처음 로드될 때 시간을 표시하기 위해
-            if (media.readyState >= 1 && timeLabel.innerText === '0:00') {
-                const dur = Math.floor(media.duration);
-                if (!isNaN(dur)) {
-                    // 여기서는 현재 시간을 계속 보여줘야 하므로 로직 유지
-                }
-            }
+        }
+
+        // 🌟 미디어가 로드되면 전체 길이를 초기에 표시해줌
+        function handleMetadata(media) {
+            const container = media.closest('.audio-player-bubble');
+            if (!container) return;
+            const timeLabel = container.querySelector('.audio-time-label');
+            const dur = Math.floor(media.duration || 0);
+            const min = Math.floor(dur / 60);
+            const sec = dur % 60;
+            timeLabel.innerText = `${min}:${sec.toString().padStart(2, '0')}`;
         }
 
         function handleImgError(img, fileName, fileId) {
@@ -485,12 +492,11 @@
                     const isAudio = rawFileName.includes('음성');
                     
                     if (isAudio) {
-                        // 🌟 새로운 표준 오디오 인터페이스 (mp4 기반 백그라운드 재생)
                         const audioId = `audio-${i}`;
                         contentHtml = `
-                            <div class="audio-player-bubble ${isArt ? 'artist' : 'user'}" onclick="toggleAudio(this.querySelector('.play-toggle-btn'), '${audioId}')">
-                                <video id="${audioId}" src="${urls.direct}" preload="metadata" style="display:none;" playsinline></video>
-                                <div class="play-toggle-btn">
+                            <div class="audio-player-bubble ${isArt ? 'artist' : 'user'}">
+                                <video id="${audioId}" src="${urls.direct}" preload="metadata" style="display:none;" playsinline onloadedmetadata="handleMetadata(this)"></video>
+                                <div class="play-toggle-btn" onclick="toggleAudio(this, '${audioId}')">
                                     <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M8 5v14l11-7z"/></svg>
                                 </div>
                                 <div class="audio-progress-container">

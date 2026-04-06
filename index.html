@@ -135,9 +135,9 @@
         const PAGE_SIZE = 150; 
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiiqBBRaOAc7OxW3NpJC5aRcIyq_V7xFLlDHgoN6trdI-xc0jxfJ_ak-qmeCIvjDKSWwgThnT1SK92/pub?gid=2099676467&single=true&output=csv";
 
-        // ✅ 테스트용 강제 매핑 (음성 텍스트 포함)
-        const FORCED_LINK = "https://drive.google.com/file/d/1Z5VJyQfhQAa8S32LN8XxHjSjgI1LuIpw/preview";
-        const TEST_FILE_NAME = "sh_2020_11_5_음성 - 1.mp4";
+        // ✅ 테스트용 강제 매핑 (제공해주신 사진 데이터)
+        const FORCED_LINK = "https://drive.google.com/uc?export=view&id=1RP7Gk8riTznCh3Uh1l1p2QEmvgFGEXqS";
+        const TEST_FILE_NAME = "hs_20201126.jpg";
 
         async function loadData() {
             const overlay = document.getElementById('loadingOverlay');
@@ -255,19 +255,17 @@
                 const link = mediaMap[cleanFileName];
 
                 let contentHtml = "";
-                let isAudio = false; // 에러 방지를 위해 미리 선언
+                let isAudio = false; 
 
                 if (link) {
                     const urls = getMediaUrls(link);
                     const isImg = cleanFileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) || item.content?.includes('(사진)');
                     
-                    // 🌟 수정: 제목(rawFileName)에 '음성'이 포함되어 있으면 무조건 커스텀 플레이어로 인식
                     isAudio = rawFileName.includes('음성') || item.content?.includes('(음성');
                     
                     if (isImg) {
                         contentHtml = `<div class="media-content"><img src="${urls.image}" loading="lazy" onerror="this.src='${urls.direct}'"></div>`;
                     } else if (isAudio) {
-                        // 🌟 커스텀 오디오 버블: 가로로 길고 클릭 시 재생됨
                         const audioId = `audio_${i}`;
                         contentHtml = `
                             <div class="audio-bubble ${isArt ? 'artist' : 'user'}" onclick="toggleAudio(this.querySelector('.play-btn'), '${audioId}')">
@@ -283,7 +281,6 @@
                                 <div class="time-display">0:00</div>
                             </div>`;
                     } else {
-                        // 일반 비디오 (iframe 프리뷰)
                         contentHtml = `<div class="media-content"><iframe src="${urls.iframe}" allow="autoplay"></iframe></div>`;
                     }
                 } else {

@@ -255,12 +255,14 @@
                 const link = mediaMap[cleanFileName];
 
                 let contentHtml = "";
+                let isAudio = false; // 에러 방지를 위해 미리 선언
+
                 if (link) {
                     const urls = getMediaUrls(link);
                     const isImg = cleanFileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) || item.content?.includes('(사진)');
                     
                     // 🌟 수정: 제목(rawFileName)에 '음성'이 포함되어 있으면 무조건 커스텀 플레이어로 인식
-                    const isAudio = rawFileName.includes('음성') || item.content?.includes('(음성');
+                    isAudio = rawFileName.includes('음성') || item.content?.includes('(음성');
                     
                     if (isImg) {
                         contentHtml = `<div class="media-content"><img src="${urls.image}" loading="lazy" onerror="this.src='${urls.direct}'"></div>`;

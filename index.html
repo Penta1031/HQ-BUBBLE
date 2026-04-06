@@ -14,54 +14,60 @@
         /* 미디어 컨텐츠 기본 스타일 */
         .media-content { border-radius: 20px; overflow: hidden; max-width: 280px; background-color: #000; min-height: 150px; position: relative; }
         
-        /* 커스텀 오디오 플레이어 스타일 */
+        /* 커스텀 오디오 플레이어 스타일 (이미지 참고) */
         .audio-bubble {
             display: flex;
             align-items: center;
-            width: 260px; /* 가로로 길게 */
-            padding: 12px 16px;
-            border-radius: 20px;
-            gap: 12px;
+            width: 280px; /* 가로로 길게 */
+            padding: 10px 14px;
+            border-radius: 22px;
+            gap: 10px;
             cursor: pointer;
             user-select: none;
-            transition: background-color 0.2s;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
+        /* 아티스트 (왼쪽) */
         .audio-bubble.artist {
             background-color: #ffffff;
             border: 1px solid #e5e7eb;
+            color: #3b82f6; /* 파란색 포인트 */
         }
 
+        /* 유저 (오른쪽) */
         .audio-bubble.user {
-            background-color: #646464;
+            background-color: #3b82f6;
             color: white;
         }
 
         .play-btn {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            background: transparent;
+            border: none;
         }
 
         .progress-container {
             flex-grow: 1;
-            height: 4px;
-            background-color: rgba(0, 0, 0, 0.1);
+            height: 3px;
+            background-color: rgba(0, 0, 0, 0.08);
             border-radius: 2px;
             position: relative;
         }
 
         .audio-bubble.user .progress-container {
-            background-color: rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.25);
         }
 
         .progress-bar {
             height: 100%;
             width: 0%;
-            background-color: #f4ad3b;
+            background-color: #3b82f6;
             border-radius: 2px;
             transition: width 0.1s linear;
         }
@@ -71,11 +77,11 @@
         }
 
         .time-display {
-            font-size: 11px;
-            font-weight: 500;
-            min-width: 35px;
+            font-size: 10px;
+            font-weight: 600;
+            min-width: 30px;
             text-align: right;
-            opacity: 0.7;
+            opacity: 0.8;
         }
         
         .media-content iframe, .media-content video, .media-content img { width: 100%; height: 100%; display: block; border: none; }
@@ -88,7 +94,7 @@
 
     <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-white/90 flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="spinner mb-4"></div>
-        <p class="text-gray-600 font-medium text-sm">데이터를 불러오는 중...</p>
+        <p class="text-gray-600 font-medium text-sm">미디어 데이터를 불러오는 중...</p>
     </div>
 
     <!-- 프로필 선택 -->
@@ -181,41 +187,44 @@
             };
         }
 
-        // 오디오 재생 제어 함수
+        // 🌟 오디오 재생 제어 함수 보강
         function toggleAudio(btn, audioId) {
             const audio = document.getElementById(audioId);
-            const icon = btn.querySelector('svg');
-            const progressBar = btn.closest('.audio-bubble').querySelector('.progress-bar');
-            const timeDisplay = btn.closest('.audio-bubble').querySelector('.time-display');
+            const bubble = btn.closest('.audio-bubble');
+            const icon = btn.querySelector('svg path');
+            const progressBar = bubble.querySelector('.progress-bar');
+            const timeDisplay = bubble.querySelector('.time-display');
 
             if (audio.paused) {
                 // 다른 모든 오디오 일시정지
                 document.querySelectorAll('audio').forEach(a => {
                     if (a.id !== audioId) {
                         a.pause();
-                        const otherIcon = a.closest('.audio-bubble')?.querySelector('.play-btn svg');
-                        if (otherIcon) otherIcon.innerHTML = '<path d="M8 5v14l11-7z" fill="currentColor"/>';
+                        const otherIcon = a.closest('.audio-bubble')?.querySelector('.play-btn svg path');
+                        if (otherIcon) otherIcon.setAttribute('d', 'M8 5v14l11-7z');
                     }
                 });
                 audio.play();
-                icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>';
+                icon.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
             } else {
                 audio.pause();
-                icon.innerHTML = '<path d="M8 5v14l11-7z" fill="currentColor"/>';
+                icon.setAttribute('d', 'M8 5v14l11-7z');
             }
 
             audio.ontimeupdate = () => {
                 const progress = (audio.currentTime / audio.duration) * 100;
                 progressBar.style.width = `${progress}%`;
                 
-                const min = Math.floor(audio.currentTime / 60);
-                const sec = Math.floor(audio.currentTime % 60);
+                const cur = audio.currentTime;
+                const min = Math.floor(cur / 60);
+                const sec = Math.floor(cur % 60);
                 timeDisplay.innerText = `${min}:${sec.toString().padStart(2, '0')}`;
             };
 
             audio.onended = () => {
-                icon.innerHTML = '<path d="M8 5v14l11-7z" fill="currentColor"/>';
+                icon.setAttribute('d', 'M8 5v14l11-7z');
                 progressBar.style.width = '0%';
+                timeDisplay.innerText = '0:00';
             };
         }
 
@@ -251,7 +260,7 @@
                     const urls = getMediaUrls(link);
                     const isImg = cleanFileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) || item.content?.includes('(사진)');
                     
-                    // 🌟 수정: 제목(rawFileName)에 '음성'이 포함되어 있으면 커스텀 플레이어로 인식
+                    // 🌟 수정: 제목(rawFileName)에 '음성'이 포함되어 있으면 오디오 플레이어로 인식 (mp4여도 오디오로 재생)
                     const isAudio = rawFileName.includes('음성') || item.content?.includes('(음성');
                     
                     if (isImg) {
@@ -260,9 +269,9 @@
                         const audioId = `audio_${i}`;
                         contentHtml = `
                             <div class="audio-bubble ${isArt ? 'artist' : 'user'}" onclick="toggleAudio(this.querySelector('.play-btn'), '${audioId}')">
-                                <audio id="${audioId}" src="${urls.direct}" style="display:none;"></audio>
+                                <audio id="${audioId}" src="${urls.direct}" preload="metadata"></audio>
                                 <div class="play-btn">
-                                    <svg viewBox="0 0 24 24" width="24" height="24">
+                                    <svg viewBox="0 0 24 24" width="22" height="22">
                                         <path d="M8 5v14l11-7z" fill="currentColor"/>
                                     </svg>
                                 </div>

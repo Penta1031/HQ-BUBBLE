@@ -377,48 +377,62 @@
             return {
                 iframe: id ? `https://drive.google.com/file/d/${id}/preview` : url,
                 image: id ? `https://drive.google.com/thumbnail?authuser=0&sz=w1000&id=${id}` : url,
-                direct: id ? `https://drive.google.com/uc?export=download&id=${id}` : url, // 직접 재생용 링크
+                direct: id ? `https://drive.google.com/uc?export=download&id=${id}` : url, 
                 id: id
             };
         }
 
-        // 🌟 실시간 오디오 재생 제어 로직
+        // 🌟 실시간 오디오(비디오 백그라운드) 재생 제어 로직 보강
         function toggleAudio(btn, audioId) {
-            const audio = document.getElementById(audioId);
+            const media = document.getElementById(audioId);
             const progressBar = btn.parentElement.querySelector('.audio-progress-bar');
             const timeLabel = btn.parentElement.querySelector('.audio-time-label');
             const icon = btn.querySelector('svg path');
 
-            if (audio.paused) {
-                // 다른 모든 오디오 정지
-                document.querySelectorAll('audio').forEach(a => {
-                    if (a.id !== audioId) {
-                        a.pause();
-                        const otherIcon = a.parentElement.querySelector('.play-toggle-btn svg path');
+            if (media.paused) {
+                // 다른 모든 재생 정지
+                document.querySelectorAll('audio, video').forEach(m => {
+                    if (m.id !== audioId && !m.closest('#videoPopup')) {
+                        m.pause();
+                        const otherIcon = m.parentElement?.querySelector('.play-toggle-btn svg path');
                         if (otherIcon) otherIcon.setAttribute('d', 'M8 5v14l11-7z');
                     }
                 });
-                audio.play();
-                icon.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z'); // Pause Icon
+                
+                media.play().catch(e => {
+                    console.error("재생 오류:", e);
+                });
+                icon.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z'); 
             } else {
-                audio.pause();
-                icon.setAttribute('d', 'M8 5v14l11-7z'); // Play Icon
+                media.pause();
+                icon.setAttribute('d', 'M8 5v14l11-7z'); 
             }
 
-            audio.ontimeupdate = () => {
-                const progress = (audio.currentTime / audio.duration) * 100;
-                progressBar.style.width = progress + '%';
-                
-                const cur = Math.floor(audio.currentTime);
-                const min = Math.floor(cur / 60);
-                const sec = cur % 60;
-                timeLabel.innerText = `${min}:${sec.toString().padStart(2, '0')}`;
+            media.ontimeupdate = () => {
+                if (media.duration) {
+                    const progress = (media.currentTime / media.duration) * 100;
+                    progressBar.style.width = progress + '%';
+                    
+                    const cur = Math.floor(media.currentTime);
+                    const min = Math.floor(cur / 60);
+                    const sec = cur % 60;
+                    timeLabel.innerText = `${min}:${sec.toString().padStart(2, '0')}`;
+                }
             };
 
-            audio.onended = () => {
+            media.onended = () => {
                 icon.setAttribute('d', 'M8 5v14l11-7z');
                 progressBar.style.width = '0%';
+                timeLabel.innerText = '0:00';
             };
+            
+            // 처음 로드될 때 시간을 표시하기 위해
+            if (media.readyState >= 1 && timeLabel.innerText === '0:00') {
+                const dur = Math.floor(media.duration);
+                if (!isNaN(dur)) {
+                    // 여기서는 현재 시간을 계속 보여줘야 하므로 로직 유지
+                }
+            }
         }
 
         function handleImgError(img, fileName, fileId) {
@@ -471,11 +485,11 @@
                     const isAudio = rawFileName.includes('음성');
                     
                     if (isAudio) {
-                        // 🌟 새로운 표준 오디오 인터페이스 (재생바 포함)
+                        // 🌟 새로운 표준 오디오 인터페이스 (mp4 기반 백그라운드 재생)
                         const audioId = `audio-${i}`;
                         contentHtml = `
                             <div class="audio-player-bubble ${isArt ? 'artist' : 'user'}" onclick="toggleAudio(this.querySelector('.play-toggle-btn'), '${audioId}')">
-                                <audio id="${audioId}" src="${urls.direct}" preload="metadata" style="display:none;"></audio>
+                                <video id="${audioId}" src="${urls.direct}" preload="metadata" style="display:none;" playsinline></video>
                                 <div class="play-toggle-btn">
                                     <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M8 5v14l11-7z"/></svg>
                                 </div>

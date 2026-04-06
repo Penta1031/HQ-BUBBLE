@@ -33,7 +33,7 @@
 
     <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-white/90 flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="spinner mb-4"></div>
-        <p class="text-gray-600 font-medium text-sm">데이터를 로딩하는 중...</p>
+        <p class="text-gray-600 font-medium text-sm">데이터를 연결하는 중...</p>
     </div>
 
     <!-- 프로필 선택 -->
@@ -73,12 +73,21 @@
         const PAGE_SIZE = 150; 
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiiqBBRaOAc7OxW3NpJC5aRcIyq_V7xFLlDHgoN6trdI-xc0jxfJ_ak-qmeCIvjDKSWwgThnT1SK92/pub?gid=2099676467&single=true&output=csv";
 
-        // ✅ 테스트용 강제 매핑 등록 (이미지 호출 방식 변경 테스트)
+        // ✅ 테스트용 강제 매핑 등록
         const testMappings = {
             "sh_2020_11_5_음성 - 1.mp4": "https://drive.google.com/file/d/1Z5VJyQfhQAa8S32LN8XxHjSjgI1LuIpw/preview",
             "hs_20201126.jpg": "https://drive.google.com/uc?export=view&id=1RP7Gk8riTznCh3Uh1l1p2QEmvgFGEXqS",
             "hs_20201106_2.jpg": "https://drive.google.com/uc?export=view&id=1o_Z3hKO-c3uoWcHdrZ_-MNeQxR0Bh97w"
         };
+
+        // 🌟 슈퍼 클린 매칭: 모든 특수문자, 공백, 확장자를 제거하고 비교용 키 생성
+        function superClean(name) {
+            if (!name) return "";
+            return name.toString()
+                .split('.')[0] // 확장자 제거
+                .replace(/[^a-z0-9가-힣]/gi, '') // 숫자, 영문, 한글 제외 모두 제거
+                .toLowerCase();
+        }
 
         async function loadData() {
             const overlay = document.getElementById('loadingOverlay');
@@ -97,22 +106,34 @@
                 rows.forEach(row => {
                     const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
                     if (columns.length >= 3) {
-                        const name = columns[0]?.replace(/"/g, '').trim().toLowerCase();
+                        const rawName = columns[0]?.replace(/"/g, '').trim();
                         const link = columns[2]?.replace(/"/g, '').trim();
-                        if(name && link) mediaMap[name] = link;
+                        if(rawName && link) {
+                            // 일반 클린과 슈퍼 클린 두 가지 버전으로 저장하여 매칭 확률 극대화
+                            const cleanKey = rawName.replace(/\s+/g, '').toLowerCase();
+                            const superKey = superClean(rawName);
+                            mediaMap[cleanKey] = link;
+                            if (superKey) mediaMap[superKey] = link;
+                        }
                     }
                 });
 
                 // 강제 매핑 데이터를 mediaMap에 병합
                 for (let key in testMappings) {
-                    mediaMap[key.replace(/\s+/g, '').toLowerCase()] = testMappings[key];
+                    const cleanKey = key.replace(/\s+/g, '').toLowerCase();
+                    const superKey = superClean(key);
+                    mediaMap[cleanKey] = testMappings[key];
+                    if (superKey) mediaMap[superKey] = testMappings[key];
                 }
 
                 const sortFn = (a, b) => parseDate(a.date) - parseDate(b.date);
                 shData.sort(sortFn); hsData.sort(sortFn);
 
                 overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 300);
+                setTimeout(() => { 
+                    overlay.style.display = 'none'; 
+                    console.log("✅ 총 매핑 데이터 수:", Object.keys(mediaMap).length);
+                }, 300);
             } catch (e) {
                 overlay.innerHTML = "<p class='text-red-500'>데이터 로딩 오류</p>";
             }
@@ -132,7 +153,6 @@
             return new Date(s);
         }
 
-        // 🌟 미디어 주소 변환 고도화
         function getMediaUrls(url) {
             let id = "";
             if (url.includes('id=')) id = url.split('id=')[1].split('&')[0];
@@ -140,13 +160,11 @@
             
             return {
                 iframe: id ? `https://drive.google.com/file/d/${id}/preview` : url,
-                // ✅ 이미지 차단 방지를 위해 고해상도 썸네일 API 사용 (sz=w1000)
                 image: id ? `https://drive.google.com/thumbnail?authuser=0&sz=w1000&id=${id}` : url,
                 id: id
             };
         }
 
-        // 🌟 이미지 로드 실패 시 대체 링크 노출
         function handleImgError(img, fileName, fileId) {
             const container = img.parentElement;
             const fallbackUrl = `https://drive.google.com/file/d/${fileId}/view`;
@@ -176,7 +194,6 @@
                 const tStr = dObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
                 const isArt = (item.sender === artist);
 
-                // 날짜 헤더 렌더링
                 if (lastDate !== dStr) {
                     html += `<div class="date-divider w-full text-center text-[#a0a0a0] text-[11px] my-6 font-medium">${dStr}</div>`;
                     lastDate = dStr;
@@ -184,16 +201,18 @@
 
                 const rawFileName = item.fileName || "";
                 const cleanFileName = rawFileName.replace(/\s+/g, '').toLowerCase();
-                const link = mediaMap[cleanFileName];
+                const superKey = superClean(rawFileName);
+                
+                // 🌟 매칭 우선순위: 일반 클린 -> 슈퍼 클린
+                const link = mediaMap[cleanFileName] || mediaMap[superKey];
 
                 let contentHtml = "";
 
                 if (link) {
                     const urls = getMediaUrls(link);
-                    const isImg = cleanFileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) || item.content?.includes('(사진)');
+                    const isImg = superKey.match(/(jpg|jpeg|png|gif|webp)/i) || item.content?.includes('(사진)');
                     
                     if (isImg) {
-                        // 🌟 이미지 출력 (Thumbnail API 사용)
                         contentHtml = `
                             <div class="media-content image-mode">
                                 <img src="${urls.image}" 
@@ -202,11 +221,14 @@
                                      onerror="handleImgError(this, '${rawFileName}', '${urls.id}')">
                             </div>`;
                     } else {
-                        // 영상/음성 출력
                         contentHtml = `<div class="media-content"><iframe src="${urls.iframe}" allow="autoplay"></iframe></div>`;
                     }
                 } else {
                     const text = (item.content || "").replace(/@@/g, '@@');
+                    // 🕵️ '혀비' 방에서 매칭 실패 시 개발자 도구에 상세 출력
+                    if (artist === '혀비' && rawFileName) {
+                        console.warn(`[혀비 매칭 실패] 원본: ${rawFileName} / 검색키: ${superKey}`);
+                    }
                     contentHtml = text || (rawFileName ? `<span class="text-xs text-gray-400 italic">[매칭 대기: ${rawFileName}]</span>` : "");
                 }
 
@@ -218,7 +240,7 @@
                         <div class="flex flex-col max-w-[90%] ${!isArt ? 'items-end' : 'items-start'}">
                             ${isArt ? `<div class="text-[13px] text-gray-800 mb-1 font-bold">${item.sender}</div>` : ""}
                             <div class="flex items-end gap-2 ${!isArt ? 'flex-row-reverse' : 'flex-row'}">
-                                <div class="${link && (cleanFileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) || item.content?.includes('(사진)')) ? '' : (link ? '' : 'px-4 py-2.5 text-[14px] shadow-sm ' + (!isArt ? 'bg-[#646464] text-white rounded-l-[18px] rounded-tr-[18px] rounded-br-[4px]' : 'bg-white text-gray-900 rounded-r-[18px] rounded-bl-[18px] rounded-tl-[4px]'))}">
+                                <div class="${link && (superKey.match(/(jpg|jpeg|png|gif|webp)/i) || item.content?.includes('(사진)')) ? '' : (link ? '' : 'px-4 py-2.5 text-[14px] shadow-sm ' + (!isArt ? 'bg-[#646464] text-white rounded-l-[18px] rounded-tr-[18px] rounded-br-[4px]' : 'bg-white text-gray-900 rounded-r-[18px] rounded-bl-[18px] rounded-tl-[4px]'))}">
                                     ${contentHtml}
                                 </div>
                                 <div class="text-[10px] text-[#a3a3a3] min-w-max mb-1">${tStr}</div>

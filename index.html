@@ -34,6 +34,10 @@
         .img-error { font-size: 11px; color: #9ca3af; text-align: center; padding: 20px; background: #fff; border-radius: 20px; border: 1px solid #eee; width: 100%; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 30px; height: 30px; border-radius: 50%; border-left-color: #f4ad3b; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 검색창 애니메이션 */
+        #searchContainer { transition: all 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
+        #searchContainer.active { max-height: 60px; opacity: 1; padding: 8px 16px; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
@@ -77,14 +81,27 @@
                 <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
             <div class="text-[17px] font-bold text-gray-800" id="roomName">아티스트</div>
-            <div class="w-8"></div>
+            <button onclick="toggleSearch()" class="p-1 hover:bg-gray-200 rounded-full transition-colors">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </button>
         </header>
+
+        <!-- 검색창 영역 -->
+        <div id="searchContainer" class="bg-white border-b border-gray-100">
+            <input type="text" id="searchInput" placeholder="날짜(YYYY-MM-DD) 또는 내용 검색" 
+                   class="w-full px-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+                   oninput="handleSearch()">
+        </div>
+
         <main id="chatArea" class="flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col gap-1 pb-6"></main>
     </div>
 
     <script>
         let shData = [], hsData = [], mediaMap = {};
+        let currentArtistData = [];
+        let filteredArtistData = [];
         let displayedCount = 0; 
+        let currentArtistName = "";
         const PAGE_SIZE = 150; 
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiiqBBRaOAc7OxW3NpJC5aRcIyq_V7xFLlDHgoN6trdI-xc0jxfJ_ak-qmeCIvjDKSWwgThnT1SK92/pub?gid=2099676467&single=true&output=csv";
 
@@ -164,7 +181,35 @@
             };
         }
 
-        // 🌟 비디오 팝업 제어
+        function toggleSearch() {
+            const container = document.getElementById('searchContainer');
+            const input = document.getElementById('searchInput');
+            container.classList.toggle('active');
+            if (container.classList.contains('active')) {
+                input.focus();
+            } else {
+                input.value = "";
+                handleSearch();
+            }
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!query) {
+                filteredArtistData = [...currentArtistData];
+            } else {
+                filteredArtistData = currentArtistData.filter(item => {
+                    const contentMatch = (item.content || "").toLowerCase().includes(query);
+                    const dateMatch = (item.date || "").toLowerCase().includes(query);
+                    const fileMatch = (item.fileName || "").toLowerCase().includes(query);
+                    return contentMatch || dateMatch || fileMatch;
+                });
+            }
+            displayedCount = 0;
+            document.getElementById('chatArea').innerHTML = "";
+            renderMessages(currentArtistName, true);
+        }
+
         function showPopup(iframeUrl) {
             const popup = document.getElementById('videoPopup');
             const iframe = document.getElementById('popupIframe');
@@ -185,18 +230,18 @@
             container.innerHTML = `<div class="img-error"><p class="font-bold">미디어 로드 실패</p><p class="text-[9px] opacity-60 mb-2">${fileName}</p><a href="${fallbackUrl}" target="_blank" class="text-blue-500 underline font-bold">원본 보기</a></div>`;
         }
 
-        function renderMessages(artist) {
+        function renderMessages(artist, isReset = false) {
             const chatArea = document.getElementById('chatArea');
-            const data = (artist === '혀비' ? shData : hsData);
             const start = displayedCount;
-            const end = Math.min(start + PAGE_SIZE, data.length);
-            if (start >= data.length) return;
+            const end = Math.min(start + PAGE_SIZE, filteredArtistData.length);
+            
+            if (start >= filteredArtistData.length && !isReset) return;
 
             let html = "";
             let lastDate = chatArea.querySelectorAll('.date-divider').length > 0 ? chatArea.querySelectorAll('.date-divider')[chatArea.querySelectorAll('.date-divider').length-1].innerText : "";
 
             for (let i = start; i < end; i++) {
-                const item = data[i];
+                const item = filteredArtistData[i];
                 const dObj = parseDate(item.date);
                 const dStr = dObj.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
                 const tStr = dObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -221,7 +266,6 @@
                     if (isImg) {
                         contentHtml = `<div class="media-content thumbnail-mode"><img src="${urls.image}" loading="lazy" onerror="handleImgError(this, '${rawFileName}', '${urls.id}')"></div>`;
                     } else {
-                        // 🌟 비디오용 썸네일 + 재생 버튼 아이콘
                         contentHtml = `
                             <div class="media-content thumbnail-mode" onclick="showPopup('${urls.iframe}')">
                                 <img src="${urls.image}" loading="lazy" onerror="handleImgError(this, '${rawFileName}', '${urls.id}')">
@@ -259,15 +303,26 @@
         }
 
         function enterChat(artist) {
+            currentArtistName = artist;
+            currentArtistData = (artist === '혀비' ? shData : hsData);
+            filteredArtistData = [...currentArtistData];
+            displayedCount = 0;
+
             document.getElementById('selectionScreen').classList.add('hidden');
             document.getElementById('chatScreen').classList.remove('hidden');
             document.getElementById('roomName').innerText = artist;
-            displayedCount = 0;
             document.getElementById('chatArea').innerHTML = "";
-            renderMessages(artist);
-            document.getElementById('chatArea').addEventListener('scroll', function() {
-                if (this.scrollHeight - this.scrollTop <= this.clientHeight + 100) renderMessages(artist);
-            });
+            document.getElementById('searchInput').value = "";
+            document.getElementById('searchContainer').classList.remove('active');
+
+            renderMessages(artist, true);
+            
+            const chatArea = document.getElementById('chatArea');
+            chatArea.onscroll = function() {
+                if (this.scrollHeight - this.scrollTop <= this.clientHeight + 100) {
+                    renderMessages(currentArtistName);
+                }
+            };
         }
     </script>
 </body>

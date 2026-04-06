@@ -10,8 +10,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         body { background-color: #e5e7eb; font-family: 'Pretendard', sans-serif; }
-        /* 🌟 1. 테두리(Shadow) 및 Min-Height 제거 */
-        .media-content { border-radius: 20px; overflow: hidden; max-width: 240px; background-color: #000; box-shadow: none !important; }
+        .media-content { border-radius: 20px; overflow: hidden; max-width: 240px; background-color: #000; min-height: 40px; }
         .media-content video, .media-content img { width: 100%; display: block; border: none; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 30px; height: 30px; border-radius: 50%; border-left-color: #f4ad3b; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -21,14 +20,20 @@
 
     <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-white/90 flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="spinner mb-4"></div>
-        <p class="text-gray-600 font-medium text-sm">데이터를 연결 중입니다...</p>
+        <p class="text-gray-600 font-medium text-sm">최종 미디어 연결 중...</p>
     </div>
 
     <div id="selectionScreen" class="w-full max-w-[400px] h-[100dvh] sm:h-[800px] sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col items-center justify-center shadow-2xl relative">
         <h1 class="text-xl font-bold text-gray-800 mb-10">혚쾌버블 아카이브</h1>
         <div class="flex gap-10">
-            <button onclick="enterChat('혀비')" class="flex flex-col items-center gap-3"><img src="https://pbs.twimg.com/media/HFOi5gtasAASasa?format=jpg&name=small" class="w-20 h-20 rounded-full border-2 border-white object-cover"><span class="text-gray-800 font-semibold">혀비</span></button>
-            <button onclick="enterChat('유말랑')" class="flex flex-col items-center gap-3"><img src="https://pbs.twimg.com/media/HFOi7g7bAAAEVPU?format=jpg&name=small" class="w-20 h-20 rounded-full border-2 border-white object-cover"><span class="text-gray-800 font-semibold">유말랑</span></button>
+            <button onclick="enterChat('혀비')" class="flex flex-col items-center gap-3 hover:scale-105 transition-transform">
+                <img src="https://pbs.twimg.com/media/HFOi5gtasAASasa?format=jpg&name=small" class="w-20 h-20 rounded-full border-2 border-white object-cover shadow-sm">
+                <span class="text-gray-800 font-semibold text-lg">혀비</span>
+            </button>
+            <button onclick="enterChat('유말랑')" class="flex flex-col items-center gap-3 hover:scale-105 transition-transform">
+                <img src="https://pbs.twimg.com/media/HFOi7g7bAAAEVPU?format=jpg&name=small" class="w-20 h-20 rounded-full border-2 border-white object-cover shadow-sm">
+                <span class="text-gray-800 font-semibold text-lg">유말랑</span>
+            </button>
         </div>
     </div>
 
@@ -54,12 +59,10 @@
                 const [shRes, hsRes, sheetRes] = await Promise.all([
                     fetch('./sh_data.json'), fetch('./hs_data.json'), fetch(GAS_URL)
                 ]);
-
                 shData = await shRes.json(); hsData = await hsRes.json(); const sheetData = await sheetRes.json();
 
                 sheetData.forEach(row => {
                     const vals = Object.values(row);
-                    // 🌟 4. 시트 제목과 코드를 소문자 및 공백 제거 후 맵핑
                     const name = vals[0]?.toString().toLowerCase().trim(); 
                     const link = vals[2]?.toString().trim(); 
                     if(name && link) mediaMap[name] = link;
@@ -69,7 +72,10 @@
                 shData.sort(sortFn); hsData.sort(sortFn);
 
                 overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; console.log("✅ 연결된 미디어 수:", Object.keys(mediaMap).length); }, 300);
+                setTimeout(() => { 
+                    overlay.style.display = 'none'; 
+                    console.log("✅ 연결 성공 미디어 수:", Object.keys(mediaMap).length);
+                }, 300);
             } catch (e) {
                 console.error(e); overlay.innerHTML = "<p class='text-red-500'>로드 실패</p>";
             }
@@ -122,28 +128,29 @@
                 const prof = isArt ? (artist === '혀비' ? "https://pbs.twimg.com/media/HFOi5gtasAASasa?format=jpg&name=small" : "https://pbs.twimg.com/media/HFOi7g7bAAAEVPU?format=jpg&name=small") : "";
                 
                 let contentHtml = "";
-                // 🌟 5. 수사 시작: JSON 파일명과 시트 제목 비교
-                const jsonName = item.fileName?.toLowerCase().trim();
-                const sLink = mediaMap[jsonName];
+                // 🌟 파일명 매칭 확인 (공백 제거 및 소문자화)
+                const jsonFileName = item.fileName?.toLowerCase().trim();
+                const sLink = mediaMap[jsonFileName];
                 
+                // 🌟 핵심 수정: 파일명이 매칭되면 타입 상관없이 미디어로 렌더링 시도
                 if (sLink) {
                     const src = getDirectUrl(sLink);
-                    if (item.type === 'image' || item.content.includes('(사진)')) {
+                    const rawContent = item.content || "";
+                    
+                    // 확장자나 텍스트 내용으로 타입 추측
+                    if (jsonFileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) || rawContent.includes('(사진)')) {
                         contentHtml = `<img src="${src}" class="rounded-[20px]" loading="lazy">`;
-                    } else if (item.content.includes('(음성')) {
+                    } else if (jsonFileName.match(/\.(mp3|m4a|wav|ogg)$/i) || rawContent.includes('(음성')) {
                         contentHtml = `<audio controls class="w-full h-10 mt-1"><source src="${src}" type="audio/mpeg"></audio>`;
                     } else {
+                        // 그 외(mp4 등)는 비디오로 처리
                         contentHtml = `<video controls class="rounded-[20px] w-full bg-black"><source src="${src}" type="video/mp4"></video>`;
                     }
-                } else if (jsonName) {
-                    // 🌟 6. 매핑 실패 시 범인을 검거하여 콘솔에 박제
-                    console.warn(`❌ 매핑 실패: [${item.fileName}] 항목을 시트에서 찾을 수 없음.`);
-                    contentHtml = item.content.replace(/@@/g, '@@');
                 } else {
-                    contentHtml = item.content.replace(/@@/g, '@@');
+                    // 유저명 @@ 변환 및 일반 텍스트
+                    contentHtml = (item.content || "").replace(/@@/g, '@@');
                 }
 
-                // 🌟 7. 폰트 크기 조정 (텍스트 말풍선: 14px, 아티스트 이름: 13px)
                 htmlFragment += `
                     <div class="flex w-full mt-4 ${!isArt ? 'justify-end' : 'justify-start'}">
                         ${isArt ? `<div class="w-10 h-10 rounded-full overflow-hidden mr-2 flex-shrink-0 border border-gray-200"><img src="${prof}" class="w-full h-full object-cover"></div>` : ""}
@@ -165,9 +172,11 @@
 
         function enterChat(artist) {
             currentArtist = artist;
+            displayedCount = 0; // 초기화
             document.getElementById('selectionScreen').classList.add('hidden');
             document.getElementById('chatScreen').classList.remove('hidden');
             document.getElementById('roomName').innerText = artist;
+            document.getElementById('chatArea').innerHTML = ""; // 초기화
             renderMessages(artist);
             document.getElementById('chatArea').addEventListener('scroll', function() {
                 if (this.scrollHeight - this.scrollTop <= this.clientHeight + 100) renderMessages(currentArtist);

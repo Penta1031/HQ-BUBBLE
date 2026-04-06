@@ -11,6 +11,7 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         body { background-color: #e5e7eb; font-family: 'Pretendard', sans-serif; }
         .media-content { border-radius: 20px; overflow: hidden; max-width: 260px; background-color: #000; min-height: 150px; position: relative; }
+        .media-content.audio-mode { background-color: #ffffff; min-height: 50px; border: 1px solid #e5e7eb; padding: 8px; }
         .media-content iframe, .media-content video, .media-content img { width: 100%; height: 100%; display: block; border: none; }
         .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 30px; height: 30px; border-radius: 50%; border-left-color: #f4ad3b; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -20,7 +21,7 @@
 
     <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-white/90 flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="spinner mb-4"></div>
-        <p class="text-gray-600 font-medium text-sm">미디어 렌더링 검증 중...</p>
+        <p class="text-gray-600 font-medium text-sm">렌더링 검증 중...</p>
     </div>
 
     <!-- 프로필 선택 -->
@@ -148,15 +149,21 @@
                 if (link) {
                     const urls = getMediaUrls(link);
                     const isImg = cleanFileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) || item.content?.includes('(사진)');
+                    const isAudio = cleanFileName.match(/\.(mp3|m4a|wav|ogg)$/i) || item.content?.includes('(음성');
                     
                     if (isImg) {
                         contentHtml = `<div class="media-content"><img src="${urls.image}" loading="lazy" onerror="this.src='${urls.direct}'"></div>`;
-                    } else {
-                        // 🌟 Iframe을 사용한 구글 드라이브 프리뷰 노출
-                        // 높이를 음성/영상에 따라 조절
-                        const h = item.content?.includes('(음성') ? '150px' : '200px';
+                    } else if (isAudio) {
+                        // 🌟 오디오 플레이어 노출 (직접 다운로드 링크 사용)
                         contentHtml = `
-                            <div class="media-content" style="min-height: ${h};">
+                            <div class="media-content audio-mode">
+                                <audio controls class="w-full h-8" src="${urls.direct}"></audio>
+                                <div class="text-[10px] text-gray-400 mt-1 text-center font-medium">음성 메시지</div>
+                            </div>`;
+                    } else {
+                        // 🌟 비디오 등은 기존처럼 iframe 사용
+                        contentHtml = `
+                            <div class="media-content" style="min-height: 200px;">
                                 <iframe src="${urls.iframe}" allow="autoplay"></iframe>
                             </div>`;
                     }

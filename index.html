@@ -21,7 +21,7 @@
         .thumbnail-mode { background-color: #f3f4f6; min-height: 100px; display: flex; align-items: center; justify-content: center; position: relative; }
         .thumbnail-mode img { width: 100%; height: auto; max-height: 400px; border-radius: 20px; object-fit: cover; }
         
-        /* 🌟 오디오 인터페이스 스타일 (재생바 포함) */
+        /* 오디오 인터페이스 스타일 (재생바 포함) */
         .audio-player-bubble { width: 280px; padding: 12px 16px; border-radius: 22px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
         .audio-player-bubble.artist { background-color: #ffffff; border: 1px solid #e5e7eb; color: #3b82f6; }
         .audio-player-bubble.user { background-color: #3b82f6; color: white; }
@@ -61,29 +61,28 @@
         .highlight { background-color: #fef08a; color: #1a1a1a; padding: 0 2px; border-radius: 2px; font-weight: bold; }
         .highlight-active { background-color: #facc15; box-shadow: 0 0 0 2px #facc15; }
 
-        /* 장문 메시지 텍스트 줄바꿈 */
+        /* 🌟 기본 텍스트 버블 스타일로 복구 */
         .bubble-content { 
-            white-space: pre-wrap; 
-            word-break: break-word; 
-            overflow-wrap: break-word;
-            line-height: 1.5;
+            word-break: break-all;
+            line-height: normal;
         }
 
-        /* 🌟 갤러리 날짜/시간 오버레이 */
+        /* 갤러리 날짜/시간 오버레이 */
         .gallery-info {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.6));
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
             color: white;
-            padding: 15px 4px 4px 4px;
-            font-size: 8px;
+            padding: 12px 4px 4px 4px;
+            font-size: 9px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
             pointer-events: none;
             line-height: 1;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -256,16 +255,13 @@
             const clearBtn = document.getElementById('clearSearchBtn');
             const chatArea = document.getElementById('chatArea');
             const currentScroll = chatArea.scrollTop;
-
             input.value = "";
             activeQuery = "";
             searchIndices = [];
             currentMatchIdx = -1;
-            
             nav.classList.add('hidden');
             clearBtn.classList.add('hidden');
             renderMessages(currentArtistName, true);
-            
             setTimeout(() => { chatArea.scrollTop = currentScroll; }, 0);
         }
 
@@ -273,7 +269,6 @@
             const query = document.getElementById('searchInput').value.trim();
             const nav = document.getElementById('searchNav');
             const clearBtn = document.getElementById('clearSearchBtn');
-            
             if (query.length < 1) {
                 activeQuery = "";
                 searchIndices = [];
@@ -283,20 +278,15 @@
                 renderMessages(currentArtistName, true);
                 return;
             }
-
             clearBtn.classList.remove('hidden');
             activeQuery = query;
             const lowerQuery = query.toLowerCase();
-            
             searchIndices = [];
             currentArtistData.forEach((item, idx) => {
                 const text = (item.content || "").toLowerCase();
                 const date = (item.date || "").toLowerCase();
-                if (text.includes(lowerQuery) || date.includes(lowerQuery)) {
-                    searchIndices.push(idx);
-                }
+                if (text.includes(lowerQuery) || date.includes(lowerQuery)) searchIndices.push(idx);
             });
-
             if (searchIndices.length > 0) {
                 nav.classList.remove('hidden');
                 if (currentMatchIdx === -1) currentMatchIdx = 0;
@@ -329,7 +319,6 @@
             } else {
                 renderMessages(currentArtistName, true);
             }
-
             setTimeout(() => {
                 const target = document.getElementById(`msg-${dataIdx}`);
                 if (target) {
@@ -349,7 +338,6 @@
             const galleryArea = document.getElementById('galleryArea');
             const chatTab = document.getElementById('chatTab');
             const galleryTab = document.getElementById('galleryTab');
-
             if (view === 'chat') {
                 chatArea.classList.remove('hidden');
                 galleryArea.classList.add('hidden');
@@ -368,13 +356,10 @@
             const popup = document.getElementById('videoPopup');
             const container = document.getElementById('popupContent');
             container.innerHTML = '<div class="close-btn" onclick="closePopup()">✕</div>';
-
             if (type === 'image') {
                 const img = document.createElement('img');
                 img.src = `https://drive.google.com/thumbnail?authuser=0&sz=w1600&id=${fileId}`;
-                img.onerror = () => {
-                    container.innerHTML += `<div class="img-error"><p>이미지 로드 실패</p><a href="https://drive.google.com/file/d/${fileId}/view" target="_blank" class="text-blue-500 font-bold mt-2 block underline">원본 링크 열기</a></div>`;
-                };
+                img.onerror = () => { container.innerHTML += `<div class="img-error"><p>이미지 로드 실패</p><a href="https://drive.google.com/file/d/${fileId}/view" target="_blank" class="text-blue-500 font-bold mt-2 block underline">원본 링크 열기</a></div>`; };
                 container.appendChild(img);
             } else {
                 const iframe = document.createElement('iframe');
@@ -403,14 +388,12 @@
             };
         }
 
-        // 🌟 실시간 오디오(비디오 백그라운드) 재생 제어 로직
         function toggleAudio(btn, audioId) {
             const media = document.getElementById(audioId);
             const container = btn.closest('.audio-player-bubble');
             const progressBar = container.querySelector('.audio-progress-bar');
             const timeLabel = container.querySelector('.audio-time-label');
             const icon = btn.querySelector('svg path');
-
             if (media.paused) {
                 document.querySelectorAll('audio, video').forEach(m => {
                     if (m.id !== audioId && !m.closest('#videoPopup')) {
@@ -419,14 +402,12 @@
                         if (otherIcon) otherIcon.setAttribute('d', 'M8 5v14l11-7z');
                     }
                 });
-                
                 media.play().catch(e => { console.error("재생 오류:", e); });
                 icon.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z'); 
             } else {
                 media.pause();
                 icon.setAttribute('d', 'M8 5v14l11-7z'); 
             }
-
             media.ontimeupdate = () => {
                 if (media.duration) {
                     const progress = (media.currentTime / media.duration) * 100;
@@ -437,7 +418,6 @@
                     timeLabel.innerText = `${min}:${sec.toString().padStart(2, '0')}`;
                 }
             };
-
             media.onended = () => {
                 icon.setAttribute('d', 'M8 5v14l11-7z');
                 progressBar.style.width = '0%';
@@ -475,49 +455,32 @@
                     displayedCount = Math.max(displayedCount, targetIdx + 1);
                 }
             }
-
             const start = isReset ? 0 : chatArea.querySelectorAll('.msg-item').length;
             const end = isReset ? displayedCount : Math.min(start + PAGE_SIZE, currentArtistData.length);
-            
             let html = "";
             let lastDate = isReset ? "" : (chatArea.querySelectorAll('.date-divider').length > 0 ? chatArea.querySelectorAll('.date-divider')[chatArea.querySelectorAll('.date-divider').length-1].innerText : "");
-
             for (let i = start; i < end; i++) {
                 const item = currentArtistData[i];
                 const dObj = parseDate(item.date);
                 const dStr = dObj.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
                 const tStr = dObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
                 const isArt = (item.sender === artist);
-
                 if (lastDate !== dStr) {
                     html += `<div class="date-divider w-full text-center text-[#a0a0a0] text-[11px] my-6 font-medium">${dStr}</div>`;
                     lastDate = dStr;
                 }
-
                 const rawFileName = item.fileName || "";
                 const cleanFileName = rawFileName.replace(/\s+/g, '').toLowerCase();
                 const superKey = superClean(rawFileName);
                 const link = mediaMap[cleanFileName] || mediaMap[superKey];
-
                 let contentHtml = "";
                 if (link) {
                     const urls = getMediaUrls(link);
                     const isImg = superKey.match(/(jpg|jpeg|png|gif|webp)/i) || item.content?.includes('(사진)');
                     const isAudio = rawFileName.includes('음성');
-                    
                     if (isAudio) {
                         const audioId = `audio-${i}`;
-                        contentHtml = `
-                            <div class="audio-player-bubble ${isArt ? 'artist' : 'user'}">
-                                <video id="${audioId}" src="${urls.direct}" preload="metadata" style="display:none;" playsinline onloadedmetadata="handleMetadata(this)"></video>
-                                <div class="play-toggle-btn" onclick="toggleAudio(this, '${audioId}')">
-                                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M8 5v14l11-7z"/></svg>
-                                </div>
-                                <div class="audio-progress-container">
-                                    <div class="audio-progress-bar"></div>
-                                </div>
-                                <div class="audio-time-label">0:00</div>
-                            </div>`;
+                        contentHtml = `<div class="audio-player-bubble ${isArt ? 'artist' : 'user'}"><video id="${audioId}" src="${urls.direct}" preload="metadata" style="display:none;" playsinline onloadedmetadata="handleMetadata(this)"></video><div class="play-toggle-btn" onclick="toggleAudio(this, '${audioId}')"><svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M8 5v14l11-7z"/></svg></div><div class="audio-progress-container"><div class="audio-progress-bar"></div></div><div class="audio-time-label">0:00</div></div>`;
                     } else if (isImg) {
                         contentHtml = `<div class="media-content thumbnail-mode" onclick="showPopup('${urls.id}', 'image')"><img src="${urls.image}" loading="lazy" onerror="handleImgError(this, '${rawFileName}', '${urls.id}')"></div>`;
                     } else {
@@ -526,24 +489,9 @@
                 } else {
                     contentHtml = highlightText(item.content) || (rawFileName ? `<span class="text-xs text-gray-400 italic">[매칭 대기: ${rawFileName}]</span>` : "");
                 }
-
                 const prof = isArt ? (artist === '혀비' ? "https://pbs.twimg.com/media/HFOi5gtasAASasa?format=jpg&name=small" : "https://pbs.twimg.com/media/HFOi7g7bAAAEVPU?format=jpg&name=small") : "";
-
-                html += `
-                    <div id="msg-${i}" class="msg-item flex w-full mt-4 ${!isArt ? 'justify-end' : 'justify-start'}">
-                        ${isArt ? `<div class="w-10 h-10 rounded-full overflow-hidden mr-2 flex-shrink-0 border border-gray-200"><img src="${prof}" class="w-full h-full object-cover"></div>` : ""}
-                        <div class="flex flex-col max-w-[85%] ${!isArt ? 'items-end' : 'items-start'}">
-                            ${isArt ? `<div class="text-[13px] text-gray-800 mb-1 font-bold">${item.sender}</div>` : ""}
-                            <div class="flex items-end gap-2 ${!isArt ? 'flex-row-reverse' : 'flex-row'}">
-                                <div class="bubble-content shadow-sm transition-all duration-500 ${link ? '' : 'px-4 py-2.5 text-[14px] ' + (!isArt ? 'bg-[#646464] text-white rounded-l-[18px] rounded-tr-[18px] rounded-br-[4px]' : 'bg-white text-gray-900 rounded-r-[18px] rounded-bl-[18px] rounded-tl-[4px]')}">
-                                    ${contentHtml}
-                                </div>
-                                <div class="text-[10px] text-[#a3a3a3] min-w-max mb-1">${tStr}</div>
-                            </div>
-                        </div>
-                    </div>`;
+                html += `<div id="msg-${i}" class="msg-item flex w-full mt-4 ${!isArt ? 'justify-end' : 'justify-start'}">${isArt ? `<div class="w-10 h-10 rounded-full overflow-hidden mr-2 flex-shrink-0 border border-gray-200"><img src="${prof}" class="w-full h-full object-cover"></div>` : ""}<div class="flex flex-col max-w-[85%] ${!isArt ? 'items-end' : 'items-start'}">${isArt ? `<div class="text-[13px] text-gray-800 mb-1 font-bold">${item.sender}</div>` : ""}<div class="flex items-end gap-2 ${!isArt ? 'flex-row-reverse' : 'flex-row'}"><div class="bubble-content shadow-sm transition-all duration-500 ${link ? '' : 'px-4 py-2.5 text-[14px] ' + (!isArt ? 'bg-[#646464] text-white rounded-l-[18px] rounded-tr-[18px] rounded-br-[4px]' : 'bg-white text-gray-900 rounded-r-[18px] rounded-bl-[18px] rounded-tl-[4px]')}">${contentHtml}</div><div class="text-[10px] text-[#a3a3a3] min-w-max mb-1">${tStr}</div></div></div></div>`;
             }
-
             chatArea.insertAdjacentHTML('beforeend', html);
             if (!isReset) displayedCount = end;
         }
@@ -556,39 +504,31 @@
                 const superKey = superClean(rawName);
                 return mediaMap[cleanName] || mediaMap[superKey];
             });
-
-            if (mediaItems.length === 0) {
-                galleryArea.innerHTML = `<div class="p-10 text-center text-gray-400 text-sm">미디어가 없습니다.</div>`;
-                return;
-            }
-
+            if (mediaItems.length === 0) { galleryArea.innerHTML = `<div class="p-10 text-center text-gray-400 text-sm">미디어가 없습니다.</div>`; return; }
             let html = `<div class="gallery-grid">`;
             mediaItems.forEach(item => {
                 const rawName = item.fileName || "";
-                const cleanName = rawName.replace(/\s+/g, '').toLowerCase();
-                const superKey = superClean(rawName);
-                const link = mediaMap[cleanName] || mediaMap[superKey];
+                const link = mediaMap[rawName.replace(/\s+/g, '').toLowerCase()] || mediaMap[superClean(rawName)];
                 const urls = getMediaUrls(link);
-                const isImg = superKey.match(/(jpg|jpeg|png|gif|webp)/i) || item.content?.includes('(사진)');
+                const isImg = superClean(rawName).match(/(jpg|jpeg|png|gif|webp)/i) || item.content?.includes('(사진)');
                 const isAudio = rawName.includes('음성');
-
-                // 🌟 날짜와 시간 포맷팅
+                
+                // 🌟 갤러리 하단용 날짜와 시간 정보
                 const dObj = parseDate(item.date);
                 const dateDisplay = `${dObj.getMonth()+1}/${dObj.getDate()}`;
                 const timeDisplay = dObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-                html += `
-                    <div class="gallery-item" onclick="showPopup('${urls.id}', '${isImg ? 'image' : 'video'}')">
-                        <img src="${urls.image}" loading="lazy" onerror="handleImgError(this, '${rawName}', '${urls.id}')">
-                        <div class="absolute top-1 right-1 text-white drop-shadow-md">
-                            ${!isImg ? (isAudio ? '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>' : '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>') : ''}
-                        </div>
-                        <!-- 🌟 하단 정보 오버레이 추가 -->
-                        <div class="gallery-info">
-                            <span>${dateDisplay}</span>
-                            <span>${timeDisplay}</span>
-                        </div>
-                    </div>`;
+                html += `<div class="gallery-item" onclick="showPopup('${urls.id}', '${isImg ? 'image' : 'video'}')">
+                    <img src="${urls.image}" loading="lazy" onerror="handleImgError(this, '${rawName}', '${urls.id}')">
+                    <div class="absolute top-1 right-1 text-white drop-shadow-md">
+                        ${!isImg ? (isAudio ? '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>' : '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>') : ''}
+                    </div>
+                    <!-- 🌟 갤러리 하단 정보 레이어 -->
+                    <div class="gallery-info">
+                        <span>${dateDisplay}</span>
+                        <span>${timeDisplay}</span>
+                    </div>
+                </div>`;
             });
             html += `</div>`;
             galleryArea.innerHTML = html;
@@ -598,11 +538,9 @@
             currentArtistName = artist;
             currentArtistData = (artist === '혀비' ? shData : hsData);
             displayedCount = PAGE_SIZE;
-
             document.getElementById('selectionScreen').classList.add('hidden');
             document.getElementById('chatScreen').classList.remove('hidden');
             document.getElementById('roomName').innerText = artist;
-            
             switchView('chat');
             document.getElementById('chatArea').innerHTML = "";
             document.getElementById('galleryArea').innerHTML = "";
@@ -611,15 +549,9 @@
             document.getElementById('searchNav').classList.add('hidden');
             document.getElementById('clearSearchBtn').classList.add('hidden');
             activeQuery = "";
-
             renderMessages(artist, true);
-            
             const chatArea = document.getElementById('chatArea');
-            chatArea.onscroll = function() {
-                if (currentView === 'chat' && !activeQuery && this.scrollHeight - this.scrollTop <= this.clientHeight + 200) {
-                    renderMessages(currentArtistName);
-                }
-            };
+            chatArea.onscroll = function() { if (currentView === 'chat' && !activeQuery && this.scrollHeight - this.scrollTop <= this.clientHeight + 200) renderMessages(currentArtistName); };
         }
     </script>
 </body>

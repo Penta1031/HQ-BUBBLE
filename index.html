@@ -14,28 +14,31 @@
         /* 미디어 컨텐츠 기본 스타일 */
         .media-content { border-radius: 20px; overflow: hidden; max-width: 280px; background-color: #000; min-height: 150px; position: relative; }
         
-        /* 커스텀 오디오 플레이어 스타일 (이미지 참고) */
+        /* 🌟 커스텀 오디오 플레이어 (가로로 긴 바 디자인) */
         .audio-bubble {
             display: flex;
             align-items: center;
-            width: 280px; /* 가로로 길게 */
-            padding: 10px 14px;
-            border-radius: 22px;
-            gap: 10px;
+            width: 280px; /* 가로로 길게 고정 */
+            padding: 12px 16px;
+            border-radius: 24px;
+            gap: 12px;
             cursor: pointer;
             user-select: none;
             position: relative;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+            transition: opacity 0.2s;
         }
+        
+        .audio-bubble:active { opacity: 0.8; }
 
-        /* 아티스트 (왼쪽) */
+        /* 아티스트 (흰색 배경) */
         .audio-bubble.artist {
             background-color: #ffffff;
             border: 1px solid #e5e7eb;
-            color: #3b82f6; /* 파란색 포인트 */
+            color: #3b82f6;
         }
 
-        /* 유저 (오른쪽) */
+        /* 유저 (파란색 배경) */
         .audio-bubble.user {
             background-color: #3b82f6;
             color: white;
@@ -48,8 +51,6 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            background: transparent;
-            border: none;
         }
 
         .progress-container {
@@ -61,7 +62,7 @@
         }
 
         .audio-bubble.user .progress-container {
-            background-color: rgba(255, 255, 255, 0.25);
+            background-color: rgba(255, 255, 255, 0.3);
         }
 
         .progress-bar {
@@ -77,9 +78,9 @@
         }
 
         .time-display {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
-            min-width: 30px;
+            min-width: 32px;
             text-align: right;
             opacity: 0.8;
         }
@@ -94,7 +95,7 @@
 
     <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-white/90 flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="spinner mb-4"></div>
-        <p class="text-gray-600 font-medium text-sm">미디어 데이터를 불러오는 중...</p>
+        <p class="text-gray-600 font-medium text-sm">데이터를 연결하는 중...</p>
     </div>
 
     <!-- 프로필 선택 -->
@@ -117,7 +118,7 @@
     </div>
 
     <!-- 채팅 화면 -->
-    <div id="chatScreen" class="hidden w-full max-w-[400px] h-[100dvh] sm:h-[800px] sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col shadow-2xl overflow-hidden relative">
+    <div id="chatScreen" class="hidden w-full max-w-[400px] h-[100dvh] sm:h-[800px] sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col shadow-2xl overflow-hidden relative border-x border-gray-200">
         <header class="bg-[#f2f3f5]/90 backdrop-blur-sm z-10 p-4 flex justify-between items-center border-b border-gray-200/50 sticky top-0">
             <button onclick="location.reload()" class="p-1 hover:bg-gray-200 rounded-full transition-colors">
                 <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
@@ -134,7 +135,7 @@
         const PAGE_SIZE = 150; 
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiiqBBRaOAc7OxW3NpJC5aRcIyq_V7xFLlDHgoN6trdI-xc0jxfJ_ak-qmeCIvjDKSWwgThnT1SK92/pub?gid=2099676467&single=true&output=csv";
 
-        // ✅ 테스트용 강제 매핑
+        // ✅ 테스트용 강제 매핑 (음성 텍스트 포함)
         const FORCED_LINK = "https://drive.google.com/file/d/1Z5VJyQfhQAa8S32LN8XxHjSjgI1LuIpw/preview";
         const TEST_FILE_NAME = "sh_2020_11_5_음성 - 1.mp4";
 
@@ -169,7 +170,6 @@
                 overlay.style.opacity = '0';
                 setTimeout(() => { overlay.style.display = 'none'; }, 300);
             } catch (e) {
-                console.error("데이터 로드 실패:", e);
                 overlay.innerHTML = "<p class='text-red-500'>데이터 로딩 오류</p>";
             }
         }
@@ -187,7 +187,7 @@
             };
         }
 
-        // 🌟 오디오 재생 제어 함수 보강
+        // 🌟 오디오 재생 제어 함수 (mp4 파일의 오디오 트랙 재생 지원)
         function toggleAudio(btn, audioId) {
             const audio = document.getElementById(audioId);
             const bubble = btn.closest('.audio-bubble');
@@ -215,9 +215,8 @@
                 const progress = (audio.currentTime / audio.duration) * 100;
                 progressBar.style.width = `${progress}%`;
                 
-                const cur = audio.currentTime;
-                const min = Math.floor(cur / 60);
-                const sec = Math.floor(cur % 60);
+                const min = Math.floor(audio.currentTime / 60);
+                const sec = Math.floor(audio.currentTime % 60);
                 timeDisplay.innerText = `${min}:${sec.toString().padStart(2, '0')}`;
             };
 
@@ -260,12 +259,13 @@
                     const urls = getMediaUrls(link);
                     const isImg = cleanFileName.match(/\.(jpg|jpeg|png|gif|webp)$/i) || item.content?.includes('(사진)');
                     
-                    // 🌟 수정: 제목(rawFileName)에 '음성'이 포함되어 있으면 오디오 플레이어로 인식 (mp4여도 오디오로 재생)
+                    // 🌟 수정: 제목(rawFileName)에 '음성'이 포함되어 있으면 무조건 커스텀 플레이어로 인식
                     const isAudio = rawFileName.includes('음성') || item.content?.includes('(음성');
                     
                     if (isImg) {
                         contentHtml = `<div class="media-content"><img src="${urls.image}" loading="lazy" onerror="this.src='${urls.direct}'"></div>`;
                     } else if (isAudio) {
+                        // 🌟 커스텀 오디오 버블: 가로로 길고 클릭 시 재생됨
                         const audioId = `audio_${i}`;
                         contentHtml = `
                             <div class="audio-bubble ${isArt ? 'artist' : 'user'}" onclick="toggleAudio(this.querySelector('.play-btn'), '${audioId}')">
@@ -281,10 +281,8 @@
                                 <div class="time-display">0:00</div>
                             </div>`;
                     } else {
-                        contentHtml = `
-                            <div class="media-content" style="min-height: 200px;">
-                                <iframe src="${urls.iframe}"></iframe>
-                            </div>`;
+                        // 일반 비디오 (iframe 프리뷰)
+                        contentHtml = `<div class="media-content"><iframe src="${urls.iframe}" allow="autoplay"></iframe></div>`;
                     }
                 } else {
                     const text = (item.content || "").replace(/@@/g, '@@');
@@ -299,7 +297,7 @@
                         <div class="flex flex-col max-w-[90%] ${!isArt ? 'items-end' : 'items-start'}">
                             ${isArt ? `<div class="text-[13px] text-gray-800 mb-1 font-bold">${item.sender}</div>` : ""}
                             <div class="flex items-end gap-2 ${!isArt ? 'flex-row-reverse' : 'flex-row'}">
-                                <div class="${link && (rawFileName.includes('음성') || item.content?.includes('(음성')) ? '' : (link ? '' : 'px-4 py-2.5 text-[14px] shadow-sm ' + (!isArt ? 'bg-[#646464] text-white rounded-l-[18px] rounded-tr-[18px] rounded-br-[4px]' : 'bg-white text-gray-900 rounded-r-[18px] rounded-bl-[18px] rounded-tl-[4px]'))}">
+                                <div class="${link && isAudio ? '' : (link ? '' : 'px-4 py-2.5 text-[14px] shadow-sm ' + (!isArt ? 'bg-[#646464] text-white rounded-l-[18px] rounded-tr-[18px] rounded-br-[4px]' : 'bg-white text-gray-900 rounded-r-[18px] rounded-bl-[18px] rounded-tl-[4px]'))}">
                                     ${contentHtml}
                                 </div>
                                 <div class="text-[10px] text-[#a3a3a3] min-w-max mb-1">${tStr}</div>

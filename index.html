@@ -420,8 +420,8 @@
             const overlay = document.getElementById('loadingOverlay');
             try {
                 const [shRes, hsRes, csvRes] = await Promise.all([
-                    fetch('./sh_data_corrected_debug.json'),
-                    fetch('./hs_data_corrected_debug.json'),
+                    fetch('./sh_data.json'),
+                    fetch('./hs_data.json'),
                     fetch(CSV_URL)
                 ]);
 

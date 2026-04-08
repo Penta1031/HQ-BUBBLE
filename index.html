@@ -98,6 +98,14 @@
             object-fit: contain;
         }
 
+        #videoPopup iframe {
+            width: 100%;
+            height: 90vh;
+            border: none;
+            display: block;
+            background: #000;
+        }
+
         .close-btn {
             position: absolute;
             top: 15px;
@@ -675,26 +683,51 @@
                         </div>`;
                 };
                 container.appendChild(img);
-            } else {
-                const video = document.createElement('video');
-                video.controls = true;
-                video.autoplay = true;
-                video.playsInline = true;
-                video.preload = 'metadata';
-                video.controlsList = 'nodownload';
-                video.src = directUrl || `https://drive.google.com/uc?export=download&id=${fileId}`;
+                popup.style.display = 'flex';
+                return;
+            }
 
-                video.onerror = () => {
+            const video = document.createElement('video');
+            video.controls = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.preload = 'metadata';
+            video.controlsList = 'nodownload';
+            video.style.width = '100%';
+            video.style.maxWidth = '100%';
+            video.style.maxHeight = 'calc(100vh - 40px)';
+            video.style.display = 'block';
+            video.style.background = '#000';
+            video.style.objectFit = 'contain';
+
+            let triedFallback = false;
+
+            video.onerror = () => {
+                if (triedFallback) return;
+                triedFallback = true;
+
+                container.innerHTML = '<div class="close-btn" onclick="closePopup()">✕</div>';
+
+                if (fileId) {
+                    const iframe = document.createElement('iframe');
+                    iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
+                    iframe.allow = 'autoplay; fullscreen';
+                    iframe.allowFullscreen = true;
+                    iframe.style.width = '100%';
+                    iframe.style.height = '90vh';
+                    iframe.style.border = 'none';
+                    iframe.style.display = 'block';
+                    container.appendChild(iframe);
+                } else {
                     container.innerHTML += `
                         <div class="img-error">
                             <p>영상 로드 실패</p>
-                            ${fileId ? `<a href="https://drive.google.com/file/d/${fileId}/view" target="_blank" class="text-blue-500 font-bold mt-2 block underline">원본 링크 열기</a>` : ''}
                         </div>`;
-                };
+                }
+            };
 
-                container.appendChild(video);
-            }
-
+            video.src = directUrl || `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
+            container.appendChild(video);
             popup.style.display = 'flex';
         }
 
@@ -705,7 +738,7 @@
             return {
                 iframe: id ? `https://drive.google.com/file/d/${id}/preview` : link,
                 image: id ? `https://drive.google.com/thumbnail?authuser=0&sz=w1000&id=${id}` : link,
-                direct: id ? `https://drive.google.com/uc?export=download&id=${id}` : link,
+                direct: id ? `https://drive.google.com/uc?export=download&id=${id}&confirm=t` : link,
                 view: id ? `https://drive.google.com/file/d/${id}/view` : link,
                 id
             };

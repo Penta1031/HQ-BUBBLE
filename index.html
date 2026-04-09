@@ -10,7 +10,19 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        body { margin: 0; background-color: #e5e7eb; font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            margin: 0;
+            background-color: #f2f3f5;
+            font-family: 'Pretendard', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: none;
+        }
 
         .media-content {
             border-radius: 20px;
@@ -226,7 +238,7 @@
         }
     </style>
 </head>
-<body class="flex items-start sm:items-center justify-center min-h-screen">
+<body class="flex items-start sm:items-center justify-center h-[100dvh] overflow-hidden">
 
     <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-white/90 flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="spinner mb-4"></div>
@@ -248,7 +260,7 @@
         </div>
     </div>
 
-    <div id="selectionScreen" class="w-full max-w-[400px] h-[100dvh] sm:h-[800px] sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col items-center justify-center shadow-2xl relative p-6">
+    <div id="selectionScreen" class="w-full max-w-[400px] h-[100dvh] min-h-[100dvh] sm:h-[800px] sm:min-h-0 sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col items-center justify-center shadow-2xl relative p-6 flex-shrink-0">
         <h1 class="text-2xl font-bold text-gray-800 mb-2">혚쾌버블 아카이브</h1>
         <p class="text-sm text-gray-500 mb-10 text-center">채팅하고 싶은 멤버를 선택하고<br>표시될 이름을 설정하세요.</p>
 
@@ -274,7 +286,7 @@
         </div>
     </div>
 
-    <div id="chatScreen" class="hidden w-full max-w-[400px] h-[100dvh] sm:h-[800px] sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col shadow-2xl overflow-hidden relative border-x border-gray-200">
+    <div id="chatScreen" class="hidden w-full max-w-[400px] h-[100dvh] min-h-[100dvh] sm:h-[800px] sm:min-h-0 sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col shadow-2xl overflow-hidden relative border-x border-gray-200 flex-shrink-0">
         <header class="bg-[#f2f3f5]/90 backdrop-blur-sm z-30 p-4 flex justify-between items-center border-b border-gray-200/50 sticky top-0">
             <button onclick="location.reload()" class="p-1 hover:bg-gray-200 rounded-full transition-colors">
                 <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
@@ -312,7 +324,7 @@
         </div>
 
         <div class="flex-1 overflow-hidden flex flex-col relative">
-            <main id="chatArea" class="flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col gap-1 pb-6 bg-[#f2f3f5]"></main>
+            <main id="chatArea" class="flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col gap-1 pb-6 bg-[#f2f3f5]" style="-webkit-overflow-scrolling: touch;"></main>
             <main id="galleryArea" class="hidden flex-1 overflow-y-auto no-scrollbar bg-white"></main>
         </div>
     </div>

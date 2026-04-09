@@ -338,7 +338,7 @@
     </div>
 
     <div id="selectionScreen" class="w-full max-w-[400px] h-[100dvh] min-h-[100dvh] sm:h-[800px] sm:min-h-0 sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col items-center justify-center shadow-2xl relative p-6 flex-shrink-0">
-        <a href="https://hq-record.vercel.app/" target="_blank" rel="noopener noreferrer" class="home-link-btn">&lt; 메인으로 가기</a>
+        <a href="https://hq-record.vercel.app/" target="_blank" rel="noopener noreferrer" class="home-link-btn">← 메인으로</a>
         <button class="guide-open-btn" onclick="toggleGuidePopup()">이용 가이드</button>
         <h1 class="text-2xl font-bold text-gray-800 mb-2">버블 아카이브</h1>
         <p class="text-sm text-gray-500 mb-10 text-center">채팅하고 싶은 멤버를 선택하고<br>표시될 이름을 설정하세요.</p>
@@ -416,6 +416,7 @@
         let currentView = 'chat';
         let userNickname = "@@";
         let selectedProfileImg = "";
+        let selectedProfileName = "";
         const PAGE_SIZE = 150;
 
         let searchIndices = [];
@@ -590,6 +591,7 @@
 
             const list = artistProfiles[artist];
             selectedProfileImg = list[0].url;
+            selectedProfileName = list[0].name;
 
             list.forEach((item, i) => {
                 const div = document.createElement('div');
@@ -602,6 +604,7 @@
                     document.querySelectorAll('.profile-option').forEach(el => el.classList.remove('selected'));
                     div.classList.add('selected');
                     selectedProfileImg = item.url;
+                    selectedProfileName = item.name;
                 };
                 grid.appendChild(div);
             });
@@ -1077,7 +1080,7 @@
                     <div id="msg-${i}" class="msg-item flex w-full mt-4 ${!isArt ? 'justify-end' : 'justify-start'}">
                         ${isArt ? `<div class="w-10 h-10 rounded-full overflow-hidden mr-2 flex-shrink-0 border border-gray-200"><img src="${prof}" class="w-full h-full object-cover"></div>` : ""}
                         <div class="flex flex-col max-w-[85%] ${!isArt ? 'items-end' : 'items-start'}">
-                            ${isArt ? `<div class="text-[13px] text-gray-800 mb-1 font-bold">${item.sender}</div>` : ""}
+                            ${isArt ? `<div class="text-[13px] text-gray-800 mb-1 font-bold">${selectedProfileName || item.sender}</div>` : ""}
                             <div class="flex items-end gap-2 ${!isArt ? 'flex-row-reverse' : 'flex-row'}">
                                 <div class="bubble-content shadow-sm transition-all duration-500 ${mediaMeta ? '' : 'px-4 py-2.5 text-[14px] ' + (!isArt ? 'bg-[#646464] text-white rounded-l-[18px] rounded-tr-[18px] rounded-br-[4px]' : 'bg-white text-gray-900 rounded-r-[18px] rounded-bl-[18px] rounded-tl-[4px]')}">
                                     ${contentHtml}
@@ -1134,7 +1137,7 @@
 
             document.getElementById('selectionScreen').classList.add('hidden');
             document.getElementById('chatScreen').classList.remove('hidden');
-            document.getElementById('roomName').innerText = artist;
+            document.getElementById('roomName').innerText = selectedProfileName || artist;
 
             switchView('chat');
             document.getElementById('chatArea').innerHTML = "";

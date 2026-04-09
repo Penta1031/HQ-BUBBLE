@@ -421,6 +421,7 @@
                 shData = await shRes.json();
                 hsData = await hsRes.json();
 
+                // 미디어 매핑은 구글 스프레드시트 CSV만 사용
                 const csvText = await csvRes.text();
                 const rows = csvText.split('\n').slice(1);
 
@@ -437,10 +438,6 @@
                         }
                     }
                 });
-
-                for (let key in testMappings) {
-                    setMediaMapEntry(key, testMappings[key].id, testMappings[key].link);
-                }
 
                 const sortFn = (a, b) => parseDate(a.date) - parseDate(b.date);
                 shData.sort(sortFn);

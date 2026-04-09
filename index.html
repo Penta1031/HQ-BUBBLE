@@ -850,7 +850,6 @@
 
                 const dObj = parseDate(item.date);
                 const dateDisplay = `${dObj.getMonth()+1}/${dObj.getDate()}`;
-                const timeDisplay = dObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
                 html += `
                     <div class="gallery-item" onclick="showPopup('${urls.id}', '${isImg ? 'image' : 'video'}', '${urls.direct}', '${urls.image}')">
@@ -860,7 +859,6 @@
                         </div>
                         <div class="gallery-info">
                             <span>${dateDisplay}</span>
-                            <span>${timeDisplay}</span>
                         </div>
                     </div>`;
             });

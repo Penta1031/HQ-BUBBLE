@@ -568,6 +568,8 @@
             const query = document.getElementById('searchInput').value.trim();
             const nav = document.getElementById('searchNav');
             const clearBtn = document.getElementById('clearSearchBtn');
+            const chatArea = document.getElementById('chatArea');
+            const currentScroll = chatArea.scrollTop;
 
             if (query.length < 1) {
                 activeQuery = "";
@@ -576,6 +578,7 @@
                 nav.classList.add('hidden');
                 clearBtn.classList.add('hidden');
                 renderMessages(currentArtistName, true);
+                setTimeout(() => { chatArea.scrollTop = currentScroll; }, 0);
                 return;
             }
 
@@ -595,12 +598,14 @@
             if (searchIndices.length > 0) {
                 nav.classList.remove('hidden');
                 if (currentMatchIdx === -1) currentMatchIdx = 0;
-                updateSearchUI();
-                jumpToMatch(searchIndices[currentMatchIdx]);
             } else {
                 currentMatchIdx = -1;
-                updateSearchUI();
+                nav.classList.add('hidden');
             }
+
+            updateSearchUI();
+            renderMessages(currentArtistName, true);
+            setTimeout(() => { chatArea.scrollTop = currentScroll; }, 0);
         }
 
         function updateSearchUI() {
@@ -928,7 +933,7 @@
 
             const chatArea = document.getElementById('chatArea');
             chatArea.onscroll = function() {
-                if (currentView === 'chat' && !activeQuery && this.scrollHeight - this.scrollTop <= this.clientHeight + 200) {
+                if (currentView === 'chat' && this.scrollHeight - this.scrollTop <= this.clientHeight + 200) {
                     renderMessages(currentArtistName);
                 }
             };

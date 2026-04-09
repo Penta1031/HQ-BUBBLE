@@ -10,7 +10,7 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        body { background-color: #e5e7eb; font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background-color: #e5e7eb; font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
 
         .media-content {
             border-radius: 20px;
@@ -226,7 +226,7 @@
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
+<body class="flex items-start sm:items-center justify-center min-h-screen">
 
     <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-white/90 flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="spinner mb-4"></div>
@@ -305,6 +305,9 @@
                     <span id="searchStatus">0 / 0</span>
                     <button onclick="navSearch(1)" class="p-1.5 hover:bg-gray-100 rounded-lg">▼</button>
                 </div>
+                <button id="closeSearchBtn" onclick="closeSearchBox()" class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="검색창 닫기">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
         </div>
 
@@ -554,6 +557,11 @@
             renderMessages(currentArtistName, true);
 
             setTimeout(() => { chatArea.scrollTop = currentScroll; }, 0);
+        }
+
+        function closeSearchBox() {
+            cancelSearch();
+            document.getElementById('searchContainer').classList.remove('active');
         }
 
         function handleSearchInput() {

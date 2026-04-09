@@ -180,6 +180,23 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
         }
 
+        /* 추가된 홈 링크 버튼 CSS */
+        .home-link-btn {
+            position: absolute;
+            top: max(14px, calc(14px + env(safe-area-inset-top, 0px)));
+            left: 14px;
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            text-decoration: none;
+        }
+
         .guide-open-btn {
             position: absolute;
             top: max(14px, calc(14px + env(safe-area-inset-top, 0px)));
@@ -986,7 +1003,7 @@
                 direct: id ? `https://drive.google.com/uc?export=download&id=${id}&confirm=t` : link,
                 view: id ? `https://drive.google.com/file/d/${id}/view` : link,
                 id
-            };
+            }
         }
 
         function handleImgError(img, fileName, fileId) {

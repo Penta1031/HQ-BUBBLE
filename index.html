@@ -296,6 +296,133 @@
             border-radius: 999px;
             line-height: 1;
         }
+
+        .calendar-wrap {
+            padding: 14px 14px 20px;
+            background: #fff;
+            min-height: 100%;
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .calendar-month-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: -0.02em;
+        }
+
+        .calendar-nav-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            background: #f3f4f6;
+            color: #374151;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+        }
+
+        .calendar-weekdays,
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .calendar-weekdays {
+            margin-bottom: 8px;
+        }
+
+        .calendar-weekday {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #9ca3af;
+            padding: 4px 0;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1 / 1;
+            border-radius: 16px;
+            background: #f9fafb;
+            border: 1px solid #eef2f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+            min-height: 44px;
+        }
+
+        .calendar-day:active {
+            transform: scale(0.98);
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            border-color: transparent;
+            cursor: default;
+        }
+
+        .calendar-day-number {
+            font-size: 13px;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1;
+        }
+
+        .calendar-day.empty .calendar-day-number {
+            visibility: hidden;
+        }
+
+        .calendar-day.has-data {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .calendar-day.selected {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+
+        .calendar-day.selected .calendar-day-number,
+        .calendar-day.selected .calendar-day-count {
+            color: #fff;
+        }
+
+        .calendar-day.today:not(.selected) {
+            border-color: #60a5fa;
+        }
+
+        .calendar-day-count {
+            font-size: 10px;
+            font-weight: 700;
+            color: #2563eb;
+            line-height: 1;
+        }
+
+        .calendar-day.empty .calendar-day-count {
+            display: none;
+        }
+
+        .calendar-legend {
+            margin-top: 14px;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+        }
     </style>
 </head>
 <body class="flex items-start sm:items-center justify-center h-[100dvh] overflow-hidden">
@@ -378,6 +505,7 @@
         <div class="flex bg-white border-b border-gray-100 z-20">
             <button id="chatTab" onclick="switchView('chat')" class="tab-btn active">채팅</button>
             <button id="galleryTab" onclick="switchView('gallery')" class="tab-btn">갤러리</button>
+            <button id="calendarTab" onclick="switchView('calendar')" class="tab-btn">캘린더</button>
         </div>
 
         <div id="searchContainer" class="bg-white border-b border-gray-100 z-20">
@@ -404,6 +532,7 @@
         <div class="flex-1 overflow-hidden flex flex-col relative">
             <main id="chatArea" class="flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col gap-1 pb-6 bg-[#f2f3f5]" style="-webkit-overflow-scrolling: touch;"></main>
             <main id="galleryArea" class="hidden flex-1 overflow-y-auto no-scrollbar bg-white"></main>
+            <main id="calendarArea" class="hidden flex-1 overflow-y-auto no-scrollbar bg-white"></main>
         </div>
     </div>
 
@@ -413,6 +542,7 @@
         let displayedCount = 0;
         let currentArtistName = "";
         let currentView = 'chat';
+        let currentCalendarMonth = null;
         let userNickname = "@@";
         let selectedProfileImg = "";
         const PAGE_SIZE = 150;
@@ -742,24 +872,153 @@
             }, 100);
         }
 
+
+        function getDateKey(dateStr) {
+            const d = parseDate(dateStr);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function setInitialCalendarMonth() {
+            if (!currentArtistData.length) {
+                currentCalendarMonth = new Date();
+                return;
+            }
+            const firstDate = parseDate(currentArtistData[0].date);
+            currentCalendarMonth = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+        }
+
+        function changeCalendarMonth(offset) {
+            if (!currentCalendarMonth) setInitialCalendarMonth();
+            currentCalendarMonth = new Date(
+                currentCalendarMonth.getFullYear(),
+                currentCalendarMonth.getMonth() + offset,
+                1
+            );
+            renderCalendar();
+        }
+
+        function selectCalendarDate(dateKey) {
+            const targetIdx = currentArtistData.findIndex(item => getDateKey(item.date) === dateKey);
+            if (targetIdx === -1) return;
+
+            displayedCount = Math.max(displayedCount, targetIdx + PAGE_SIZE);
+            switchView('chat');
+            renderMessages(currentArtistName, true);
+
+            setTimeout(() => {
+                const target = document.getElementById(`msg-${targetIdx}`);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const bubble = target.querySelector('.bubble-content');
+                    if (bubble) {
+                        bubble.classList.add('highlight-active');
+                        setTimeout(() => bubble.classList.remove('highlight-active'), 1500);
+                    }
+                }
+            }, 80);
+        }
+
+        function renderCalendar() {
+            const calendarArea = document.getElementById('calendarArea');
+            if (!currentCalendarMonth) setInitialCalendarMonth();
+
+            const dataByDate = {};
+            currentArtistData.forEach((item, idx) => {
+                const key = getDateKey(item.date);
+                if (!dataByDate[key]) {
+                    dataByDate[key] = { count: 0, firstIdx: idx, mediaCount: 0 };
+                }
+                dataByDate[key].count += 1;
+                if (item.fileName) dataByDate[key].mediaCount += 1;
+            });
+
+            const year = currentCalendarMonth.getFullYear();
+            const month = currentCalendarMonth.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startWeekday = firstDay.getDay();
+            const daysInMonth = lastDay.getDate();
+
+            const monthTitle = `${year}.${String(month + 1).padStart(2, '0')}`;
+            const today = new Date();
+            const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            let dayCells = '';
+            for (let i = 0; i < startWeekday; i++) {
+                dayCells += `
+                    <div class="calendar-day empty">
+                        <div class="calendar-day-number">0</div>
+                    </div>
+                `;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const info = dataByDate[dateKey];
+                const hasData = !!info;
+                const isToday = dateKey === todayKey;
+
+                dayCells += `
+                    <button class="calendar-day ${hasData ? 'has-data' : ''} ${isToday ? 'today' : ''}"
+                            onclick="${hasData ? `selectCalendarDate('${dateKey}')` : ''}">
+                        <div class="calendar-day-number">${day}</div>
+                        <div class="calendar-day-count">${hasData ? info.count : ''}</div>
+                    </button>
+                `;
+            }
+
+            calendarArea.innerHTML = `
+                <div class="calendar-wrap">
+                    <div class="calendar-header">
+                        <button class="calendar-nav-btn" onclick="changeCalendarMonth(-1)">‹</button>
+                        <div class="calendar-month-title">${monthTitle}</div>
+                        <button class="calendar-nav-btn" onclick="changeCalendarMonth(1)">›</button>
+                    </div>
+                    <div class="calendar-weekdays">
+                        <div class="calendar-weekday">일</div>
+                        <div class="calendar-weekday">월</div>
+                        <div class="calendar-weekday">화</div>
+                        <div class="calendar-weekday">수</div>
+                        <div class="calendar-weekday">목</div>
+                        <div class="calendar-weekday">금</div>
+                        <div class="calendar-weekday">토</div>
+                    </div>
+                    <div class="calendar-grid">${dayCells}</div>
+                    <div class="calendar-legend">숫자는 해당 날짜의 메시지 개수입니다. 날짜를 누르면 그 날 채팅으로 이동합니다.</div>
+                </div>
+            `;
+        }
+
         function switchView(view) {
             currentView = view;
             const chatArea = document.getElementById('chatArea');
             const galleryArea = document.getElementById('galleryArea');
+            const calendarArea = document.getElementById('calendarArea');
             const chatTab = document.getElementById('chatTab');
             const galleryTab = document.getElementById('galleryTab');
+            const calendarTab = document.getElementById('calendarTab');
+
+            chatArea.classList.add('hidden');
+            galleryArea.classList.add('hidden');
+            calendarArea.classList.add('hidden');
+            chatTab.classList.remove('active');
+            galleryTab.classList.remove('active');
+            calendarTab.classList.remove('active');
 
             if (view === 'chat') {
                 chatArea.classList.remove('hidden');
-                galleryArea.classList.add('hidden');
                 chatTab.classList.add('active');
-                galleryTab.classList.remove('active');
-            } else {
-                chatArea.classList.add('hidden');
+            } else if (view === 'gallery') {
                 galleryArea.classList.remove('hidden');
-                chatTab.classList.remove('active');
                 galleryTab.classList.add('active');
                 renderGallery();
+            } else {
+                calendarArea.classList.remove('hidden');
+                calendarTab.classList.add('active');
+                renderCalendar();
             }
         }
 
@@ -1014,6 +1273,7 @@
             currentArtistData = (artist === '혀비' ? shData : hsData);
             displayedCount = PAGE_SIZE;
             selectedProfileImg = selectedProfileImg || defaultArtistCard[artist].url;
+            setInitialCalendarMonth();
 
             document.getElementById('selectionScreen').classList.add('hidden');
             document.getElementById('chatScreen').classList.remove('hidden');

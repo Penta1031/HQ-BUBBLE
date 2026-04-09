@@ -338,6 +338,7 @@
     </div>
 
     <div id="selectionScreen" class="w-full max-w-[400px] h-[100dvh] min-h-[100dvh] sm:h-[800px] sm:min-h-0 sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col items-center justify-center shadow-2xl relative p-6 flex-shrink-0">
+        <a href="https://hq-record.vercel.app/" target="_blank" rel="noopener noreferrer" class="home-link-btn">&lt; 메인으로 가기</a>
         <button class="guide-open-btn" onclick="toggleGuidePopup()">이용 가이드</button>
         <h1 class="text-2xl font-bold text-gray-800 mb-2">버블 아카이브</h1>
         <p class="text-sm text-gray-500 mb-10 text-center">채팅하고 싶은 멤버를 선택하고<br>표시될 이름을 설정하세요.</p>
@@ -1154,11 +1155,11 @@
             };
         }
     </script>
-    <button id="jumpFirstFloatingBtn" onclick="jumpToFirstDay()" class="jump-first-floating-btn" aria-label="처음으로 이동" title="처음으로 이동">
+    <button id="jumpFirstFloatingBtn" onclick="jumpToFirstDay()" class="jumpFirst-floating-btn jump-first-floating-btn" aria-label="처음으로 이동" title="처음으로 이동">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5M12 5L7 10M12 5L17 10"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M12 18V6"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M7.5 10.5L12 6l4.5 4.5"></path>
         </svg>
-        <span>처음으로</span>
     </button>
 </body>
 </html>

@@ -395,6 +395,9 @@
                     <span id="searchStatus" class="inline-block min-w-[44px] text-center">0 / 0</span>
                     <button onclick="navSearch(1)" class="p-1.5 hover:bg-gray-100 rounded-lg">▼</button>
                 </div>
+                <button id="jumpFirstDayBtn" onclick="jumpToFirstDay()" class="flex-shrink-0 text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="맨 첫날로 이동" title="맨 첫날로 이동">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19L4 12L11 5M20 19L13 12L20 5"></path></svg>
+                </button>
                 <button id="closeSearchBtn" onclick="closeSearchBox()" class="flex-shrink-0 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="검색창 닫기">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
@@ -420,6 +423,7 @@
         let searchIndices = [];
         let currentMatchIdx = -1;
         let activeQuery = "";
+        let lastSearchInputValue = "";
 
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiiqBBRaOAc7OxW3NpJC5aRcIyq_V7xFLlDHgoN6trdI-xc0jxfJ_ak-qmeCIvjDKSWwgThnT1SK92/pub?gid=2099676467&single=true&output=csv";
 
@@ -710,6 +714,7 @@
 
             input.value = "";
             activeQuery = "";
+            lastSearchInputValue = "";
             searchIndices = [];
             currentMatchIdx = -1;
 
@@ -725,15 +730,39 @@
             document.getElementById('searchContainer').classList.remove('active');
         }
 
+        function jumpToFirstDay() {
+            displayedCount = Math.max(displayedCount, PAGE_SIZE);
+            switchView('chat');
+            renderMessages(currentArtistName, true);
+
+            setTimeout(() => {
+                const firstMsg = document.getElementById('msg-0');
+                const chatArea = document.getElementById('chatArea');
+                if (firstMsg) {
+                    firstMsg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const bubble = firstMsg.querySelector('.bubble-content');
+                    if (bubble) {
+                        bubble.classList.add('highlight-active');
+                        setTimeout(() => bubble.classList.remove('highlight-active'), 1500);
+                    }
+                } else if (chatArea) {
+                    chatArea.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }, 80);
+        }
+
         function handleSearchInput() {
-            const query = document.getElementById('searchInput').value.trim();
+            const inputEl = document.getElementById('searchInput');
+            const query = inputEl.value.trim();
             const nav = document.getElementById('searchNav');
             const clearBtn = document.getElementById('clearSearchBtn');
             const chatArea = document.getElementById('chatArea');
             const currentScroll = chatArea.scrollTop;
+            const queryChanged = query !== lastSearchInputValue;
 
             if (query.length < 1) {
                 activeQuery = "";
+                lastSearchInputValue = "";
                 searchIndices = [];
                 currentMatchIdx = -1;
                 nav.classList.add('hidden');
@@ -744,6 +773,12 @@
             }
 
             clearBtn.classList.remove('hidden');
+
+            if (queryChanged) {
+                currentMatchIdx = 0;
+            }
+
+            lastSearchInputValue = query;
             activeQuery = query;
             const lowerQuery = query.toLowerCase();
 
@@ -780,7 +815,7 @@
 
             if (searchIndices.length > 0) {
                 nav.classList.remove('hidden');
-                if (currentMatchIdx === -1 || currentMatchIdx >= searchIndices.length) currentMatchIdx = 0;
+                if (currentMatchIdx < 0 || currentMatchIdx >= searchIndices.length) currentMatchIdx = 0;
             } else {
                 currentMatchIdx = -1;
                 nav.classList.add('hidden');

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
-    <title>혚쾌버블 아카이브</title>
+    <title>버블 아카이브</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -159,6 +159,66 @@
             background: rgba(37, 99, 235, 0.98);
         }
 
+        #guidePopup {
+            position: fixed;
+            inset: 0;
+            z-index: 320;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.78);
+        }
+
+        .guide-popup-card {
+            width: min(92vw, 360px);
+            max-height: min(82vh, 700px);
+            overflow-y: auto;
+            background: white;
+            border-radius: 24px;
+            padding: 24px 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        }
+
+        .guide-open-btn {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .guide-close-btn {
+            width: 100%;
+            margin-top: 16px;
+            background: #111827;
+            color: white;
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .guide-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .guide-list strong {
+            color: #111827;
+        }
+
         #profilePopup { background-color: rgba(0, 0, 0, 0.8); z-index: 300; }
         .profile-selection-card { background: white; width: 90%; max-width: 360px; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
         .profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -260,8 +320,26 @@
         </div>
     </div>
 
+    <div id="guidePopup" onclick="closeGuidePopup()">
+        <div class="guide-popup-card" onclick="event.stopPropagation()">
+            <div class="text-center mb-4">
+                <h2 class="text-xl font-bold text-gray-900">이용 가이드</h2>
+                <p class="text-sm text-gray-500 mt-1">버블 아카이브를 더 편하게 보는 방법</p>
+            </div>
+            <div class="guide-list">
+                <div><strong>1.</strong> 메인 화면에서 멤버를 선택하고, 내 이름을 설정한 뒤 시작해 주세요.</div>
+                <div><strong>2.</strong> 상단 돋보기로 날짜나 단어를 검색할 수 있습니다.</div>
+                <div><strong>3.</strong> 채팅 화면에서 사진/음성/영상을 누르면 팝업으로 크게 볼 수 있습니다.</div>
+                <div><strong>4.</strong> 팝업 우측 상단의 <strong>다운로드</strong> 버튼으로 이미지와 영상, 음성을 저장할 수 있습니다.</div>
+                <div><strong>5.</strong> 갤러리 탭에서는 날짜 기준으로 미디어만 빠르게 모아 볼 수 있습니다.</div>
+            </div>
+            <button class="guide-close-btn" onclick="closeGuidePopup()">닫기</button>
+        </div>
+    </div>
+
     <div id="selectionScreen" class="w-full max-w-[400px] h-[100dvh] min-h-[100dvh] sm:h-[800px] sm:min-h-0 sm:rounded-[2rem] bg-[#f2f3f5] flex flex-col items-center justify-center shadow-2xl relative p-6 flex-shrink-0">
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">혚쾌버블 아카이브</h1>
+        <button class="guide-open-btn" onclick="toggleGuidePopup()">이용 가이드</button>
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">버블 아카이브</h1>
         <p class="text-sm text-gray-500 mb-10 text-center">채팅하고 싶은 멤버를 선택하고<br>표시될 이름을 설정하세요.</p>
 
         <div class="w-full max-w-[280px] mb-12">
@@ -490,6 +568,15 @@
         }
         window.onload = loadData;
 
+        function toggleGuidePopup() {
+            const popup = document.getElementById('guidePopup');
+            popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function closeGuidePopup() {
+            document.getElementById('guidePopup').style.display = 'none';
+        }
+
         function openProfilePicker(artist) {
             currentArtistName = artist;
             const popup = document.getElementById('profilePopup');
@@ -703,7 +790,7 @@
             const popup = document.getElementById('videoPopup');
             const container = document.getElementById('popupContent');
             const downloadUrl = directUrl || (fileId ? `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t` : '');
-            container.innerHTML = buildPopupToolbar(type !== 'image' ? downloadUrl : '');
+            container.innerHTML = buildPopupToolbar(downloadUrl);
 
             if (!fileId && !directUrl && !fallbackThumb) {
                 container.innerHTML += `<div class="img-error"><p>파일 정보가 없습니다.</p></div>`;
@@ -844,7 +931,7 @@
 
                     if (isImg) {
                         contentHtml = `
-                            <div class="media-content thumbnail-mode" onclick="showPopup('${urls.id}', 'image', '', '${urls.image}')">
+                            <div class="media-content thumbnail-mode" onclick="showPopup('${urls.id}', 'image', '${urls.direct}', '${urls.image}')">
                                 <img src="${urls.image}" loading="lazy" onerror="handleImgError(this, '${rawFileName}', '${urls.id}')">
                             </div>`;
                     } else {

@@ -180,7 +180,7 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
         }
 
-        /* 추가된 홈 링크 버튼 CSS */
+        /* 수정된 홈 링크 버튼 CSS */
         .home-link-btn {
             position: absolute;
             top: max(14px, calc(14px + env(safe-area-inset-top, 0px)));
@@ -394,7 +394,7 @@
         <div class="flex bg-white border-b border-gray-100 z-20">
             <button id="chatTab" onclick="switchView('chat')" class="tab-btn active">채팅</button>
             <button id="galleryTab" onclick="switchView('gallery')" class="tab-btn">갤러리</button>
-                    </div>
+        </div>
 
         <div id="searchContainer" class="bg-white border-b border-gray-100 z-20">
             <div class="flex items-center gap-2">
@@ -1112,7 +1112,15 @@
 
         function renderGallery() {
             const galleryArea = document.getElementById('galleryArea');
-            const mediaItems = currentArtistData.filter(item => !!findMediaMetaByFileName(item.fileName || ""));
+            
+            // 이모티콘/스티커를 제외하고 미디어가 있는 항목만 걸러내기
+            const mediaItems = currentArtistData.filter(item => {
+                const hasMedia = !!findMediaMetaByFileName(item.fileName || "");
+                const content = item.content || "";
+                const isEmoticon = content.includes('이모티콘') || content.includes('스티커');
+                
+                return hasMedia && !isEmoticon;
+            });
 
             if (mediaItems.length === 0) {
                 galleryArea.innerHTML = `<div class="p-10 text-center text-gray-400 text-sm">미디어가 없습니다.</div>`;

@@ -182,8 +182,8 @@
 
         .guide-open-btn {
             position: absolute;
-            top: 18px;
-            right: 18px;
+            top: max(14px, calc(14px + env(safe-area-inset-top, 0px)));
+            right: 14px;
             background: white;
             color: #374151;
             border: 1px solid #e5e7eb;

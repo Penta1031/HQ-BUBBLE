@@ -124,6 +124,29 @@
             border-radius: 50%;
         }
 
+        .download-btn {
+            position: absolute;
+            top: 15px;
+            right: 56px;
+            z-index: 20;
+            background: rgba(59, 130, 246, 0.9);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 8px 12px;
+            border-radius: 999px;
+            text-decoration: none;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+
+        .download-btn:hover {
+            background: rgba(37, 99, 235, 0.95);
+        }
+
         #profilePopup { background-color: rgba(0, 0, 0, 0.8); z-index: 300; }
         .profile-selection-card { background: white; width: 90%; max-width: 360px; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
         .profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -661,10 +684,20 @@
             document.getElementById('videoPopup').style.display = 'none';
         }
 
+        function buildPopupToolbar(downloadUrl = '') {
+            let toolbar = '<div class="close-btn" onclick="closePopup()">✕</div>';
+            if (downloadUrl) {
+                toolbar += `<a class="download-btn" href="${downloadUrl}" target="_blank" rel="noopener noreferrer">다운로드</a>`;
+            }
+            return toolbar;
+        }
+
+
         function showPopup(fileId, type = 'video', directUrl = '', fallbackThumb = '') {
             const popup = document.getElementById('videoPopup');
             const container = document.getElementById('popupContent');
-            container.innerHTML = '<div class="close-btn" onclick="closePopup()">✕</div>';
+            const downloadUrl = directUrl || (fileId ? `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t` : '');
+            container.innerHTML = buildPopupToolbar(type !== 'image' ? downloadUrl : '');
 
             if (!fileId && !directUrl && !fallbackThumb) {
                 container.innerHTML += `<div class="img-error"><p>파일 정보가 없습니다.</p></div>`;
@@ -692,7 +725,6 @@
             video.autoplay = true;
             video.playsInline = true;
             video.preload = 'metadata';
-            video.controlsList = 'nodownload';
             video.style.width = '100%';
             video.style.maxWidth = '100%';
             video.style.maxHeight = 'calc(100vh - 40px)';
@@ -706,7 +738,7 @@
                 if (triedFallback) return;
                 triedFallback = true;
 
-                container.innerHTML = '<div class="close-btn" onclick="closePopup()">✕</div>';
+                container.innerHTML = buildPopupToolbar(downloadUrl);
 
                 if (fileId) {
                     const iframe = document.createElement('iframe');
@@ -726,7 +758,7 @@
                 }
             };
 
-            video.src = directUrl || `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
+            video.src = downloadUrl;
             container.appendChild(video);
             popup.style.display = 'flex';
         }
@@ -868,7 +900,6 @@
 
                 const dObj = parseDate(item.date);
                 const dateDisplay = `${dObj.getMonth()+1}/${dObj.getDate()}`;
-                const timeDisplay = dObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
                 html += `
                     <div class="gallery-item" onclick="showPopup('${urls.id}', '${isImg ? 'image' : 'video'}', '${urls.direct}', '${urls.image}')">
@@ -878,7 +909,6 @@
                         </div>
                         <div class="gallery-info">
                             <span>${dateDisplay}</span>
-                            <span>${timeDisplay}</span>
                         </div>
                     </div>`;
             });
